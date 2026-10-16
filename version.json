@@ -1,0 +1,10 @@
+{
+  "appName": "SHIVAI — MYRAA Personal AI System",
+  "owner": "Shri Ram Nag",
+  "version": "6.0.0",
+  "versionCode": 8,
+  "releasedAt": "2026-10-16T22:30:00+05:30",
+  "githubRepo": "https://github.com/shriramnag/myraa-unlimited-ai.git",
+  "downloadApkUrl": "https://github.com/shriramnag/myraa-unlimited-ai/releases/latest",
+  "changelog": "v6.0 Complete Edition: 10 Animated 3D Character Videos (Close-Up & Full-Body for MYRAA, CODEX, AURA, SENTINEL, SAGE, PIXEL), Verified Google Account Sign-In synced to Google Sheets DB, Indian UPI Payment Gateway (Google Pay, PhonePe, Paytm, BHIM UPI), Live Visual Screen Activity Overlay, Play Store Install / Single-App Update / Uninstall, and Speaker Voiceprint Recognition + Background Media Audio Ducking."
+}

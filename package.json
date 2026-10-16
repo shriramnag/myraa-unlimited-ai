@@ -1,0 +1,24 @@
+{
+  "name": "myraa-unlimited-ai",
+  "version": "2.0.0",
+  "description": "MYRAA v2.0 — Unlimited Lifetime 3D Holographic AI Assistant powered by Google Gemini Live, Multi-Key Rotator & Keyless AI Fallback",
+  "private": false,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shriramnag/myraa-unlimited-ai.git"
+  },
+  "scripts": {
+    "web:dev": "cd web && npm run dev",
+    "web:build": "cd web && npm run build",
+    "web:preview": "cd web && npm run preview",
+    "server:dev": "cd server && npm run dev",
+    "server:build": "cd server && npm run build",
+    "server:start": "cd server && npm run start",
+    "android:sync": "cd web && npx cap sync android",
+    "android:open": "cd web && npx cap open android",
+    "github:push": "bash ./push-to-github.sh"
+  },
+  "keywords": ["myraa", "gemini-live", "threejs", "capacitor", "ai-assistant", "unlimited-ai"],
+  "author": "shriramnag",
+  "license": "MIT"
+}
