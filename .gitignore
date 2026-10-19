@@ -1,0 +1,34 @@
+# Node modules & caches (Note: web/dist/ and releases/*.apk are tracked for OTA & Web bundle!)
+node_modules/
+.cache/
+
+# Environment & Secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.keystore
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Android intermediate build caches only (keep releases/*.apk tracked!)
+android/.gradle/
+android/app/build/
+android/build/
+*.aab
+!releases/*.apk
+!web/dist/**
