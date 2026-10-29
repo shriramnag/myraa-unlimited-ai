@@ -3,15 +3,15 @@
   "primaryAiName": "SHIV AI",
   "packageName": "ai.shriramnag.myraa",
   "owner": "Shri Ram Nag (श्री राम नाग)",
-  "version": "v7.0.34",
-  "versionCode": 7034,
+  "version": "v7.0.35",
+  "versionCode": 7035,
   "versioningRule": "Gradual step versioning: increments automatically on every build (myraa-v7.0.34.apk, myraa-v7.0.35.apk, myraa-v7.0.36.apk...)",
   "releaseDate": "2026-10-29",
   "freeForever": true,
   "localOnlyPrivacy": true,
-  "apkUrl": "https://github.com/shriramnag/myraa-unlimited-ai/releases/latest/download/myraa-v7.0.34.apk",
+  "apkUrl": "https://github.com/shriramnag/myraa-unlimited-ai/releases/latest/download/myraa-v7.0.35.apk",
   "fallbackReleaseUrl": "https://github.com/shriramnag/myraa-unlimited-ai/releases/latest/download/myraa-latest.apk",
   "coreRepoUrl": "https://github.com/shriramnag/myraa-unlimited-ai",
   "mandatory": false,
-  "changelog": "v7.0.34 Update: Fixed 'App not installed' on Indian Android/Realme/OPPO devices by removing Play Protect sideload-blocking services from AndroidManifest.xml, embedded permanent 2020-dated Shri Ram Nag V1+V2+V3 certificate, added gradual version naming (myraa-v7.0.34.apk), Live OTA Channel Updater, and Supreme Owner Anti-Tamper Seal."
+  "changelog": "v7.0.35 Update: Upgraded Google Gemini Live API to 24kHz Realistic Human Voice (Aoede/Kore/Puck/Charon), added Zero-Beep Full-Duplex Phone Call Mic (Hardware Echo Cancellation, no 'tu-tu' system beeps), Instant Mid-Sentence Barge-In Interruption, and Live Function Calling so all 60 Android/PC/IoT tasks execute during a live voice call."
 }

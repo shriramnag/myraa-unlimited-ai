@@ -12,8 +12,8 @@ android {
         applicationId = "ai.myraa.mobile"
         minSdk = 24
         targetSdk = 36
-        versionCode = 7034
-        versionName = "7.0.34"
+        versionCode = 7035
+        versionName = "7.0.35"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
