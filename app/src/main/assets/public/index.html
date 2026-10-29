@@ -323,11 +323,12 @@
     <div class="center-hud">
       <div class="quick-launch-bar">
         <button class="quick-pill live-pill" onclick="toggleHandsFreeLiveMode()" id="handsFreePill">🔴 Hands-Free Voice: OFF</button>
+        <button class="quick-pill" onclick="toggleBackgroundWakeGuard()" id="wakeWordPill">🛡️ Wake-Word ("Hey MYRAA"): OFF</button>
         <button class="quick-pill apk-pill" onclick="openModal('apkModal')">📥 Direct APK Download</button>
-        <button class="quick-pill" onclick="openModal('liveModal')">🎙️ Google Live API + Vision</button>
-        <button class="quick-pill" onclick="openModal('pcModal')">🖥️ PC Desktop Control</button>
+        <button class="quick-pill" onclick="openModal('iotModal')">🏠 IoT & ESP32 Robot</button>
+        <button class="quick-pill" onclick="openModal('pcModal')">🖥️ Live PC Screen + Ctrl</button>
+        <button class="quick-pill" onclick="openModal('actionsModal')">🤖 Screen Agent (60 Actions)</button>
         <button class="quick-pill" onclick="openModal('codeModal')">🐙 GitHub & Code Agent</button>
-        <button class="quick-pill" onclick="openModal('searchModal')">🌐 Omni-Search</button>
       </div>
       <div class="speech-bubble">
         <div class="speech-meta">
@@ -616,7 +617,17 @@
       </div>
 
       <div class="card">
-        <div class="card-title">🖱️ VIRTUAL PC TRACKPAD & MOUSE / KEYBOARD DECK</div>
+        <div class="card-title">
+          <span>📺 LIVE PC DESKTOP SCREEN STREAMING (TOUCH-TO-CLICK)</span>
+          <button class="icon-btn purple-btn" id="pcStreamToggleBtn" onclick="togglePcLiveScreenStream()">▶️ START LIVE SCREEN</button>
+        </div>
+        <div style="font-size:11px; color:var(--text-dim); margin-bottom:6px;">
+          Streams your live PC desktop from <code>http://&lt;PC-IP&gt;:8765/screen</code>. Tap anywhere on the live screen below to click that exact spot on your PC!
+        </div>
+        <div id="pcLiveScreenWrap" style="display:none; position:relative; border:1px solid var(--cyan); border-radius:10px; overflow:hidden; background:#020617; margin-bottom:8px;">
+          <img id="pcLiveScreenImg" src="" alt="Live PC Desktop Stream" style="width:100%; display:block; cursor:crosshair;" onclick="handlePcLiveScreenTap(event)" />
+        </div>
+        <div class="card-title" style="margin-top:4px;">🖱️ VIRTUAL PC TRACKPAD & MOUSE / KEYBOARD DECK</div>
         <div class="trackpad" id="pcTrackpad" onmousemove="handleTrackpadMove(event)" ontouchmove="handleTrackpadTouch(event)" onclick="sendPcCommand('MOUSE_LEFT_CLICK')">
           <span>TOUCH & DRAG TO MOVE PC CURSOR • TAP TO CLICK</span>
           <span id="trackpadCoords" style="font-size:10px; color:var(--gold); margin-top:4px;">X: 0, Y: 0</span>
@@ -650,19 +661,43 @@
     </div>
   </div>
 
-  <!-- MODAL 4: 52 Native Android Actions + Brain & Vault -->
+  <!-- MODAL 4: 60 Native Android Actions + Autonomous Screen Agent + Brain & Vault -->
   <div class="modal-overlay" id="actionsModal">
     <div class="modal-header">
-      <div class="modal-title">📱 52 ANDROID NATIVE ACTIONS & BRAIN VAULT (1977)</div>
+      <div class="modal-title">🤖 AUTONOMOUS SCREEN AGENT & 60 NATIVE ANDROID ACTIONS</div>
       <button class="close-btn" onclick="closeAllModals()">CLOSE</button>
     </div>
     <div class="modal-body">
       <div class="card">
         <div class="card-title">
-          <span>QUICK HARDWARE, SETTINGS & VOICE AUTOMATION</span>
-          <span class="badge ok">52 ACTIVE</span>
+          <span>🤖 AUTONOMOUS SCREEN UI READER, CLICKER & AUTO-TYPER</span>
+          <span class="badge gold">VISION + ACCESSIBILITY</span>
         </div>
-        <input id="actionFilterInput" class="chat-input" style="width:100%; margin-bottom:8px;" placeholder="Filter 52 Android actions (e.g. flashlight, wifi, cast, whatsapp)..." oninput="renderActions()" />
+        <div style="font-size:11px; color:var(--text-dim); margin-bottom:8px;">
+          Reads any safe screen UI tree, clicks buttons by name, or types text automatically (OTP/Banking strictly shielded):
+        </div>
+        <div style="display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap;">
+          <input id="screenAgentTargetInput" class="chat-input" placeholder="Button name to click (e.g. Search, Send, Install) or text to type..." />
+          <button class="icon-btn fix-btn" onclick="invokeNativeAction('ACCESSIBILITY_CLICK', { target: document.getElementById('screenAgentTargetInput').value })">👆 CLICK BUTTON</button>
+          <button class="icon-btn purple-btn" onclick="invokeNativeAction('AUTO_TYPE_TEXT', { message: document.getElementById('screenAgentTargetInput').value })">⌨️ AUTO-TYPE</button>
+        </div>
+        <div class="grid-3">
+          <button class="action-chip" onclick="inspectScreenWithAgent()"><span>🔍 Read Screen UI</span><span class="badge">SCAN</span></button>
+          <button class="action-chip" onclick="invokeNativeAction('ACCESSIBILITY_SCROLL', { direction: 'DOWN' })"><span>⬇️ Scroll Down</span><span class="badge">SWIPE</span></button>
+          <button class="action-chip" onclick="invokeNativeAction('ACCESSIBILITY_SCROLL', { direction: 'UP' })"><span>⬆️ Scroll Up</span><span class="badge">SWIPE</span></button>
+          <button class="action-chip" onclick="invokeNativeAction('GLOBAL_HOME')"><span>🏠 Home Screen</span><span class="badge">OS</span></button>
+          <button class="action-chip" onclick="invokeNativeAction('GLOBAL_BACK')"><span>🔙 Back Button</span><span class="badge">OS</span></button>
+          <button class="action-chip" onclick="invokeNativeAction('GLOBAL_SCREENSHOT')"><span>📸 Screenshot</span><span class="badge ok">CAP</span></button>
+        </div>
+        <div id="screenAgentSummaryBox" class="code-box" style="margin-top:8px; max-height:95px; font-size:10.5px;">Tap "Read Screen UI" to inspect active app package, clickable buttons, and visible text on screen.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>QUICK HARDWARE, SETTINGS & VOICE AUTOMATION</span>
+          <span class="badge ok">60 ACTIVE</span>
+        </div>
+        <input id="actionFilterInput" class="chat-input" style="width:100%; margin-bottom:8px;" placeholder="Filter 60 Android actions (e.g. flashlight, wifi, cast, whatsapp, screen)..." oninput="renderActions()" />
         <div class="grid-2" id="nativeActionsGrid"></div>
       </div>
 
@@ -717,6 +752,8 @@
       "SEND_WHATSAPP_MESSAGE", "CREATE_ALARM", "START_TIMER", "CREATE_CALENDAR_EVENT",
       "CREATE_REMINDER", "READ_NOTIFICATION", "START_BACKGROUND_MODE", "STOP_BACKGROUND_MODE",
       "INSTALL_APP_PLAYSTORE", "UNINSTALL_APP", "ACCESSIBILITY_SCROLL", "ACCESSIBILITY_CLICK",
+      "READ_SCREEN_UI", "AUTO_TYPE_TEXT", "TAP_COORDINATES", "GLOBAL_HOME",
+      "GLOBAL_BACK", "GLOBAL_RECENTS", "GLOBAL_SCREENSHOT", "WAKE_WORD_STATUS",
       "OPEN_APP", "CLOSE_MYRAA", "CANCEL_PENDING_ACTION"
     ];
 
@@ -1390,6 +1427,56 @@
         return;
       }
 
+      // 14. Autonomous Screen Agent by Voice (Click, Type, Read Screen, Scroll, Home, Back, Screenshot)
+      if (lower.includes("screen padho") || lower.includes("read screen")) {
+        openModal("actionsModal");
+        inspectScreenWithAgent();
+        return;
+      }
+      if (lower.startsWith("click ")) {
+        const btnName = text.replace(/^click\s+/i, "").trim();
+        invokeNativeAction("ACCESSIBILITY_CLICK", { target: btnName });
+        return;
+      }
+      if (lower.includes("scroll down") || lower.includes("niche scroll")) {
+        invokeNativeAction("ACCESSIBILITY_SCROLL", { direction: "DOWN" });
+        return;
+      }
+      if (lower.includes("scroll up") || lower.includes("upar scroll")) {
+        invokeNativeAction("ACCESSIBILITY_SCROLL", { direction: "UP" });
+        return;
+      }
+      if (lower.includes("screenshot")) {
+        invokeNativeAction("GLOBAL_SCREENSHOT");
+        return;
+      }
+      if (lower.includes("home screen")) {
+        invokeNativeAction("GLOBAL_HOME");
+        return;
+      }
+
+      // 15. IoT, Smart Home & ESP32 Robot Voice Control
+      if (lower.includes("room light") || lower.includes("living light")) {
+        sendIotCommand("LIVING_LIGHT", (lower.includes("off") || lower.includes("band")) ? "OFF" : "ON");
+        return;
+      }
+      if (lower.includes("pankha") || lower.includes("ceiling fan") || lower.includes("fan ")) {
+        sendIotCommand("CEILING_FAN", (lower.includes("off") || lower.includes("band")) ? "OFF" : "ON");
+        return;
+      }
+      if (lower.includes("ac ") && (lower.includes("on") || lower.includes("chalu") || lower.includes("off") || lower.includes("band"))) {
+        sendIotCommand("SMART_AC", (lower.includes("off") || lower.includes("band")) ? "OFF" : "22C_ON");
+        return;
+      }
+      if (lower.includes("robot")) {
+        if (lower.includes("stop") || lower.includes("ruko")) sendIotCommand("ROBOT_MOVE", "STOP");
+        else if (lower.includes("back") || lower.includes("piche")) sendIotCommand("ROBOT_MOVE", "BACKWARD");
+        else if (lower.includes("left") || lower.includes("baye")) sendIotCommand("ROBOT_MOVE", "LEFT");
+        else if (lower.includes("right") || lower.includes("daye")) sendIotCommand("ROBOT_MOVE", "RIGHT");
+        else sendIotCommand("ROBOT_MOVE", "FORWARD");
+        return;
+      }
+
       // 14. Conversational AI Response via Google Gemini Live / Free AI Brain
       speakResponse(`⏳ ${currentAvatar.name} soch rahi hai...`, false);
       try {
@@ -1639,17 +1726,167 @@
 
     function openModal(id) {
       closeAllModals();
-      document.getElementById(id).classList.add("open");
+      const el = document.getElementById(id);
+      if (el) el.classList.add("open");
     }
 
     function closeAllModals() {
       document.querySelectorAll(".modal-overlay").forEach(m => m.classList.remove("open"));
     }
 
-    renderAvatars();
-    renderActions();
-    renderBrainMemories();
-    initGeminiKey();
+    // ============================================================================
+    // UPGRADE 1: WAKE-WORD ("HEY MYRAA" / "JAI SHIV") ALWAYS-ON BACKGROUND GUARD
+    // ============================================================================
+    let wakeGuardActive = false;
+    function toggleBackgroundWakeGuard() {
+      wakeGuardActive = !wakeGuardActive;
+      const pill = document.getElementById("wakeWordPill");
+      if (wakeGuardActive) {
+        invokeNativeAction("START_BACKGROUND_MODE");
+        if (pill) {
+          pill.textContent = "🛡️ Wake-Word ('Hey MYRAA'): ON";
+          pill.classList.add("apk-pill");
+        }
+        speakResponse("Always-On Background Wake-Word Service chalu ho gaya hai. Ab aap 'Hey Myraa' ya 'Jai Shiv' bol kar kabhi bhi jaga sakte hain.");
+      } else {
+        invokeNativeAction("STOP_BACKGROUND_MODE");
+        if (pill) {
+          pill.textContent = "🛡️ Wake-Word ('Hey MYRAA'): OFF";
+          pill.classList.remove("apk-pill");
+        }
+        speakResponse("Background Wake-Word Service band kar diya gaya hai.");
+      }
+    }
+
+    // ============================================================================
+    // UPGRADE 2: AUTONOMOUS SCREEN AGENT UI INSPECTOR
+    // ============================================================================
+    function inspectScreenWithAgent() {
+      const msg = invokeNativeAction("READ_SCREEN_UI");
+      const box = document.getElementById("screenAgentSummaryBox");
+      if (box) box.textContent = msg;
+    }
+
+    // ============================================================================
+    // UPGRADE 3: IoT, SMART HOME & ESP32 ROBOTICS CONTROLLER
+    // ============================================================================
+    let iotHost = localStorage.getItem("MyraaIotHost") || "192.168.1.150";
+    async function sendIotCommand(device, state) {
+      const ipInput = document.getElementById("iotIpInput");
+      if (ipInput && ipInput.value.trim()) {
+        iotHost = ipInput.value.trim();
+        localStorage.setItem("MyraaIotHost", iotHost);
+      }
+      const statusEl = document.getElementById("iotStatusText");
+      if (statusEl) {
+        statusEl.innerHTML = `⚡ Dispatched <b>${device} = ${state}</b> to Smart Hub (<code>http://${iotHost}/cmd?device=${device}&state=${state}</code>)`;
+      }
+      try {
+        await fetch(`http://${iotHost}/cmd?device=${encodeURIComponent(device)}&state=${encodeURIComponent(state)}`, { mode: "no-cors" });
+      } catch (e) {}
+      auditLogs.unshift(`[IOT-HUB] ${device} -> ${state} (${iotHost})`);
+      renderAuditLogs();
+      speakResponse(`Smart Home IoT command: ${device.replace(/_/g, " ")} set to ${state}.`);
+    }
+
+    // ============================================================================
+    // UPGRADE 4: LIVE PC DESKTOP SCREEN STREAMING INSIDE MOBILE
+    // ============================================================================
+    let pcStreamTimer = null;
+    function togglePcLiveScreenStream() {
+      const wrap = document.getElementById("pcLiveScreenWrap");
+      const btn = document.getElementById("pcStreamToggleBtn");
+      if (pcStreamTimer) {
+        clearInterval(pcStreamTimer);
+        pcStreamTimer = null;
+        wrap.style.display = "none";
+        btn.textContent = "▶️ START LIVE SCREEN";
+        return;
+      }
+      wrap.style.display = "block";
+      btn.textContent = "⏹️ STOP LIVE SCREEN";
+      fetchPcScreenFrame();
+      pcStreamTimer = setInterval(fetchPcScreenFrame, 1100);
+      speakResponse("Live PC Desktop Screen streaming chalu ho gaya hai.");
+    }
+
+    async function fetchPcScreenFrame() {
+      const host = document.getElementById("pcIpInput")?.value.trim() || pcEndpoint;
+      try {
+        const res = await fetch(`http://${host}/screen`);
+        const data = await res.json();
+        if (data.ok && data.image) {
+          document.getElementById("pcLiveScreenImg").src = data.image;
+        }
+      } catch (e) {}
+    }
+
+    function handlePcLiveScreenTap(e) {
+      const img = e.currentTarget;
+      const rect = img.getBoundingClientRect();
+      const rx = ((e.clientX - rect.left) / Math.max(1, rect.width)).toFixed(3);
+      const ry = ((e.clientY - rect.top) / Math.max(1, rect.height)).toFixed(3);
+      sendPcCommand("MOUSE_CLICK_RATIO", { rx: parseFloat(rx), ry: parseFloat(ry) });
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      renderAvatars();
+      renderActions();
+      renderBrainMemories();
+      initGeminiKey();
+    });
   </script>
+
+  <!-- MODAL 5: IoT, SMART HOME & ESP32 ROBOTICS CONTROLLER -->
+  <div class="modal-overlay" id="iotModal">
+    <div class="modal-header">
+      <div class="modal-title">🏠 IoT, SMART HOME & ESP32 ROBOTICS CONTROLLER</div>
+      <button class="close-btn" onclick="closeAllModals()">CLOSE</button>
+    </div>
+    <div class="modal-body">
+      <div class="card">
+        <div class="card-title">
+          <span>📡 ESP32 / NODEMCU / TASMOTA SMART HOME GATEWAY</span>
+          <span class="badge ok">WI-FI LAN</span>
+        </div>
+        <div style="display:flex; gap:6px; margin-bottom:6px;">
+          <input id="iotIpInput" class="chat-input" value="192.168.1.150" placeholder="ESP32 / Smart Relay IP (e.g. 192.168.1.150)" />
+          <button class="icon-btn fix-btn" onclick="sendIotCommand('PING', 'OK')">LINK HUB</button>
+        </div>
+        <div id="iotStatusText" style="font-size:11px; color:var(--text-dim);">
+          Control lights, fans, AC, locks, and ESP32 robots by tap or voice ("Room light chalu karo", "Robot aage chalo").
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">💡 SMART HOME APPLIANCES & RELAYS</div>
+        <div class="grid-2">
+          <button class="action-chip" onclick="sendIotCommand('LIVING_LIGHT', 'ON')"><span>💡 Living Light ON</span><span class="badge ok">ON</span></button>
+          <button class="action-chip" onclick="sendIotCommand('LIVING_LIGHT', 'OFF')"><span>🌑 Living Light OFF</span><span class="badge">OFF</span></button>
+          <button class="action-chip" onclick="sendIotCommand('CEILING_FAN', 'ON')"><span>🌀 Ceiling Fan ON</span><span class="badge ok">ON</span></button>
+          <button class="action-chip" onclick="sendIotCommand('CEILING_FAN', 'OFF')"><span>⏹️ Ceiling Fan OFF</span><span class="badge">OFF</span></button>
+          <button class="action-chip" onclick="sendIotCommand('SMART_AC', '22C_ON')"><span>❄️ Smart AC 22°C</span><span class="badge ok">COOL</span></button>
+          <button class="action-chip" onclick="sendIotCommand('SMART_AC', 'OFF')"><span>🌡️ Smart AC OFF</span><span class="badge">OFF</span></button>
+          <button class="action-chip" onclick="sendIotCommand('DOOR_LOCK', 'LOCKED')"><span>🔒 Lock Main Door</span><span class="badge gold">SEC</span></button>
+          <button class="action-chip" onclick="sendIotCommand('ALL_RELAYS', 'OFF')"><span>⚡ Master All OFF</span><span class="badge rose">ALL</span></button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🤖 ESP32 / ARDUINO ROBOT ROVER DIRECTIONAL PAD</div>
+        <div class="grid-3">
+          <div></div>
+          <button class="action-chip" onclick="sendIotCommand('ROBOT_MOVE', 'FORWARD')"><span>⬆️ Forward</span><span class="badge">FWD</span></button>
+          <div></div>
+          <button class="action-chip" onclick="sendIotCommand('ROBOT_MOVE', 'LEFT')"><span>⬅️ Turn Left</span><span class="badge">L</span></button>
+          <button class="action-chip" onclick="sendIotCommand('ROBOT_MOVE', 'STOP')"><span>⏹️ STOP</span><span class="badge rose">HALT</span></button>
+          <button class="action-chip" onclick="sendIotCommand('ROBOT_MOVE', 'RIGHT')"><span>➡️ Turn Right</span><span class="badge">R</span></button>
+          <div></div>
+          <button class="action-chip" onclick="sendIotCommand('ROBOT_MOVE', 'BACKWARD')"><span>⬇️ Backward</span><span class="badge">REV</span></button>
+          <div></div>
+        </div>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

@@ -809,7 +809,7 @@ public class MyraaNativePlugin extends Plugin {
                 }
                 case "AUTO_TYPE_TEXT": {
                     MyraaAccessibilityService svc = MyraaAccessibilityService.getInstance();
-                    String textToType = message.isEmpty() ? query : message;
+                    String textToType = message.isEmpty() ? actionObj.getString("query", "") : message;
                     boolean typed = (svc != null) && svc.performSafeTextEntry(target, textToType);
                     result.put("ok", typed);
                     result.put("message", typed ? ("Typed '" + textToType + "' on screen.") : "Enable MYRAA Accessibility Service to auto-type into apps.");
