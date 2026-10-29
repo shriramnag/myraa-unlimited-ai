@@ -714,6 +714,89 @@ public class MyraaNativePlugin extends Plugin {
                     result.put("message", "Flashlight turned off.");
                     break;
                 }
+                case "COPY_TO_CLIPBOARD": {
+                    ClipboardManager cb = (ClipboardManager) ctx.getSystemService(Context.CLIPBOARD_SERVICE);
+                    if (cb != null) {
+                        ClipData clip = ClipData.newPlainText("SHIV_AI_MYRAA", message.isEmpty() ? target : message);
+                        cb.setPrimaryClip(clip);
+                    }
+                    result.put("ok", true);
+                    result.put("message", "Copied to Android clipboard.");
+                    break;
+                }
+                case "SHARE_TEXT": {
+                    Intent sendIntent = new Intent(Intent.ACTION_SEND);
+                    sendIntent.putExtra(Intent.EXTRA_TEXT, message.isEmpty() ? target : message);
+                    sendIntent.setType("text/plain");
+                    Intent shareIntent = Intent.createChooser(sendIntent, "Share via SHIV AI — MYRAA");
+                    shareIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    ctx.startActivity(shareIntent);
+                    result.put("ok", true);
+                    result.put("message", "Opened Android system share sheet.");
+                    break;
+                }
+                case "OPEN_GITHUB_REPO": {
+                    String repoUrl = target.startsWith("http")
+                        ? target
+                        : "https://github.com/" + (target.isEmpty() ? "shriramnag/myraa-unlimited-ai" : target);
+                    Intent ghIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(repoUrl));
+                    ghIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    ctx.startActivity(ghIntent);
+                    result.put("ok", true);
+                    result.put("message", "Opened GitHub Repo: " + repoUrl);
+                    break;
+                }
+                case "OPEN_DEVELOPER_OPTIONS": {
+                    Intent devIntent = new Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS);
+                    devIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    ctx.startActivity(devIntent);
+                    result.put("ok", true);
+                    result.put("message", "Developer Options & Wireless Debugging opened.");
+                    break;
+                }
+                case "OPEN_CAST_SETTINGS": {
+                    Intent castIntent = new Intent(Settings.ACTION_CAST_SETTINGS);
+                    castIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    ctx.startActivity(castIntent);
+                    result.put("ok", true);
+                    result.put("message", "Wireless Display / PC Cast settings opened.");
+                    break;
+                }
+                case "OPEN_VPN_SETTINGS": {
+                    Intent vpnIntent = new Intent(Settings.ACTION_VPN_SETTINGS);
+                    vpnIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    ctx.startActivity(vpnIntent);
+                    result.put("ok", true);
+                    result.put("message", "VPN network settings opened.");
+                    break;
+                }
+                case "OPEN_SOUND_SETTINGS": {
+                    Intent soundIntent = new Intent(Settings.ACTION_SOUND_SETTINGS);
+                    soundIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    ctx.startActivity(soundIntent);
+                    result.put("ok", true);
+                    result.put("message", "Sound & vibration settings opened.");
+                    break;
+                }
+                case "OPEN_LOCALE_SETTINGS": {
+                    Intent locIntent = new Intent(Settings.ACTION_LOCALE_SETTINGS);
+                    locIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    ctx.startActivity(locIntent);
+                    result.put("ok", true);
+                    result.put("message", "Language & region settings opened.");
+                    break;
+                }
+                case "DEVICE_TELEMETRY": {
+                    result.put("ok", true);
+                    result.put("brand", Build.BRAND);
+                    result.put("model", Build.MODEL);
+                    result.put("manufacturer", Build.MANUFACTURER);
+                    result.put("sdkInt", Build.VERSION.SDK_INT);
+                    result.put("release", Build.VERSION.RELEASE);
+                    result.put("hardware", Build.HARDWARE);
+                    result.put("message", Build.MANUFACTURER + " " + Build.MODEL + " (Android " + Build.VERSION.RELEASE + ", SDK " + Build.VERSION.SDK_INT + ")");
+                    break;
+                }
                 default: {
                     result.put("ok", true);
                     result.put("message", "SHIV AI action executed: " + action);
