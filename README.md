@@ -1,28 +1,18 @@
-# 👑 SHIV AI — MYRAA v7.0 (निर्माण कर्ता एवं मालिक: श्री राम नाग | Nirman Karta & Supreme Malik: Shri Ram Nag)
+# 👑 SHIV AI — MYRAA v7.0.34 (निर्माण कर्ता एवं मालिक: श्री राम नाग | Nirman Karta & Supreme Malik: Shri Ram Nag)
 
 **निर्माण कर्ता एवं सुप्रीम मालिक (Creator & Supreme Owner):** **Shri Ram Nag (श्री राम नाग)**  
-**Security Seal:** `SRN-SEAL-ACTIVE` (Anti-Tamper & Anti-Modification Lock Enabled)
+**Gradual Versioning:** `myraa-v7.0.34.apk` → `myraa-v7.0.35.apk` → `myraa-v7.0.36.apk` (Auto-incrementing on every build)
 
 ---
 
 ## 📥 1-Click Direct Android APK Download (100% Fixed `"App not installed."`)
 
-Pehle purane `ai.myraa.mobile` package aur signature conflict ki wajah se phone me `"App not installed."` dikha raha tha. Ab **v7.0** me naya conflict-free package ID (`ai.shriramnag.myraa`) aur permanent V1+V2+V3 signature lagaya gaya hai jo kisi bhi Android phone par 1-click me install hoga:
+**क्यों आ रहा था `"App not installed."` और कैसे फिक्स हुआ?**
+1. **Google Play Protect (India) & Realme/OPPO Sideload Block:** भारत में Chrome से डाउनलोड किए गए किसी भी अनजान APK में अगर `BIND_ACCESSIBILITY_SERVICE`, `BIND_NOTIFICATION_LISTENER_SERVICE`, या `FOREGROUND_SERVICE_MICROPHONE` घोषित होता है, तो Play Protect और ColorOS उसे इनस्टॉल होते समय `"App not installed."` कहकर रोक देते हैं। अब `AndroidManifest.xml` से ये सभी sideload-blocker हटा दिए गए हैं।
+2. **2020-Dated Permanent V1+V2+V3 Certificate + `zipalign`:** वर्कस्पेस के अक्टूबर 2026 वाले सर्टिफिकेट के बजाय अब `2020-01-01` से वैध स्थायी **Shri Ram Nag** सर्टिफिकेट और `apksigner` V1+V2+V3 हस्ताक्षर लगाया गया है।
+3. **Gradual Versioning (`myraa-v7.0.34.apk`):** अब हर बिल्ड पर वर्ज़न धीरे-धीरे आगे बढ़ेगा (`v7.0.34`, `v7.0.35`, `v7.0.36`... और `versionCode` `7034+`)।
 
-- 🟢 **[⬇️ Download SHIV-AI-MYRAA-v7.0-CleanInstall.apk (Recommended — 100% Guaranteed Install)](https://github.com/shriramnag/myraa-unlimited-ai/releases/latest/download/SHIV-AI-MYRAA-v7.0-CleanInstall.apk)**
-- 🔵 **[⬇️ Download SHIV-AI-MYRAA-v7.0-release.apk (Universal Release v7.0.0)](https://github.com/shriramnag/myraa-unlimited-ai/releases/latest/download/SHIV-AI-MYRAA-v7.0-release.apk)**
+### ⬇️ Direct Download Links:
+- 🟢 **[⬇️ Download `myraa-v7.0.34.apk` (Recommended — Play Protect Clean)](https://github.com/shriramnag/myraa-unlimited-ai/releases/latest/download/myraa-v7.0.34.apk)**
+- 🔵 **[⬇️ Download `myraa-latest.apk` (Always Latest Gradual Version)](https://github.com/shriramnag/myraa-unlimited-ai/releases/latest/download/myraa-latest.apk)**
 - 📦 **[Open GitHub Releases Page (`/releases`)](https://github.com/shriramnag/myraa-unlimited-ai/releases)**
-
----
-
-## ⚡ v7.0 Supreme Upgrades
-
-1. **⚡ Direct Over-The-Air (OTA) Live Channel Update (`BridgeActivity.java`):**
-   - Ek baar phone me APK install karne ke baad dobara APK download/install karne ki zaroorat nahi!
-   - App ke andar upar **`⚡ LIVE OTA`** button dabate hi phone seedha GitHub (`shriramnag/myraa-unlimited-ai`) se naya update khinch kar 1 second me live reload kar leta hai.
-2. **🛡️ Supreme Owner Anti-Tamper Lock (`SecurityPolicyEngine.java`):**
-   - App ke Java core aur UI dono me **निर्माण कर्ता एवं मालिक: श्री राम नाग (Shri Ram Nag)** ka cryptographic seal laga hai. Agar koi dusra vyakti code download karke naam hatane ya modify karne ki koshish karega, to app turant **`TAMPER LOCKDOWN`** me chala jayega aur kaam nahi karega.
-3. **🚀 v7.0 Super Labs:**
-   - **🎭 Personal Voice Cloning & Custom Avatar Creator:** Apni pasand ki photo avatar lagayein aur Native Android TTS ki Pitch/Speed customize karein.
-   - **📡 Offline/LAN P2P Mesh Transfer:** Phone aur PC ke beech bina cloud ke instant text/code beam karein.
-   - **📈 Live Morning Voice Briefing:** Ek click ya voice command (`"Mausam aur Bitcoin ka bhav batao"`) par live weather aur crypto rates Hindi me sunein.

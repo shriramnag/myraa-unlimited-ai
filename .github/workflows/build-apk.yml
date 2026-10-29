@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   build-android-apk:
-    name: Build & Publish Universal Direct APK (v7.0 Supreme Owner Edition)
+    name: Build & Publish Gradual Version APK (myraa-v7.0.34+)
     runs-on: ubuntu-latest
 
     steps:
@@ -22,6 +22,18 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
+
+      - name: Calculate Gradual Version (v7.0.34, v7.0.35, v7.0.36...)
+        run: |
+          PATCH_NUM=$((28 + ${GITHUB_RUN_NUMBER:-6}))
+          if [ "$PATCH_NUM" -lt 34 ]; then
+            PATCH_NUM=34
+          fi
+          VER_NAME="7.0.${PATCH_NUM}"
+          VER_CODE=$((7000 + PATCH_NUM))
+          echo "VER_NAME=$VER_NAME" >> $GITHUB_ENV
+          echo "VER_CODE=$VER_CODE" >> $GITHUB_ENV
+          echo "Building Gradual Version: myraa-v${VER_NAME}.apk (versionCode: ${VER_CODE})"
 
       - name: Configure Android SDK & Accept Licenses (Ubuntu 24.04 Compatible)
         run: |
@@ -35,31 +47,20 @@ jobs:
             "$SDKMANAGER" "platforms;android-34" "build-tools;34.0.0" "platform-tools"
           fi
 
-      - name: Verify Pre-Bundled Android WebView Assets
+      - name: Prepare Clean WebView Assets (Strip Unused Heavy 3D PMX Models)
         run: |
           mkdir -p app/src/main/assets/public
           if [ -d "public/avatars" ]; then cp -rn public/avatars app/src/main/assets/public/ || true; fi
-          if [ -d "public/characters" ]; then cp -rn public/characters app/src/main/assets/public/ || true; fi
+          rm -rf app/src/main/assets/public/characters || true
           rm -rf app/src/main/assets/public/assets/aistudio || true
           ls -la app/src/main/assets/public/
 
-      - name: Prepare Permanent Keystore & Zero-Conflict Gradle Config
+      - name: Restore Permanent 2020-Dated Shri Ram Nag Release Keystore & Gradle Config
         run: |
-          if [ -f "debug.keystore.base64" ]; then
-            base64 -d debug.keystore.base64 > debug.keystore
-            echo "Restored permanent debug.keystore from debug.keystore.base64"
-          elif [ ! -f "debug.keystore" ]; then
-            keytool -genkeypair -v \
-              -keystore debug.keystore \
-              -storepass android \
-              -alias androiddebugkey \
-              -keypass android \
-              -keyalg RSA \
-              -keysize 2048 \
-              -startdate "2020/01/01 00:00:00" \
-              -validity 10000 \
-              -dname "CN=Shri Ram Nag,OU=SHIV AI,O=MYRAA,L=Jodhpur,ST=Rajasthan,C=IN"
-          fi
+          cat << 'KEYEOF' | base64 -d > myraa_release.keystore
+          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
+          KEYEOF
+          cp myraa_release.keystore debug.keystore
 
           cat > settings.gradle.kts << 'EOF'
           pluginManagement {
@@ -86,7 +87,7 @@ jobs:
           }
           EOF
 
-          cat > app/build.gradle.kts << 'EOF'
+          cat > app/build.gradle.kts << EOF
           plugins {
               id("com.android.application")
           }
@@ -96,16 +97,16 @@ jobs:
               compileSdk = 34
 
               defaultConfig {
-                  applicationId = project.findProperty("customAppId")?.toString() ?: "ai.shriramnag.myraa"
+                  applicationId = "ai.shriramnag.myraa"
                   minSdk = 24
                   targetSdk = 33
-                  versionCode = 700
-                  versionName = "7.0.0"
+                  versionCode = ${VER_CODE}
+                  versionName = "${VER_NAME}"
               }
 
               signingConfigs {
                   create("release") {
-                      storeFile = file("${rootDir}/debug.keystore")
+                      storeFile = file("\${rootDir}/myraa_release.keystore")
                       storePassword = "android"
                       keyAlias = "androiddebugkey"
                       keyPassword = "android"
@@ -114,7 +115,7 @@ jobs:
                       enableV3Signing = true
                   }
                   getByName("debug") {
-                      storeFile = file("${rootDir}/debug.keystore")
+                      storeFile = file("\${rootDir}/myraa_release.keystore")
                       storePassword = "android"
                       keyAlias = "androiddebugkey"
                       keyPassword = "android"
@@ -174,62 +175,62 @@ jobs:
         with:
           gradle-version: '8.10.2'
 
-      - name: Build Signed Universal APKs (Zero Package Conflict)
+      - name: Build & Explicitly Re-Sign Universal APK (myraa-v${{ env.VER_NAME }}.apk)
         run: |
-          gradle assembleDebug assembleRelease --no-daemon --stacktrace
+          gradle assembleRelease assembleDebug --no-daemon --stacktrace
           mkdir -p releases
-          cp app/build/outputs/apk/debug/app-debug.apk releases/SHIV-AI-MYRAA-v7.0-debug.apk
-          cp app/build/outputs/apk/release/app-release.apk releases/SHIV-AI-MYRAA-v7.0-release.apk
-          cp app/build/outputs/apk/release/app-release.apk releases/SHIV-AI-MYRAA-v7.0-CleanInstall.apk
-          cp app/build/outputs/apk/release/app-release.apk releases/SHIV-AI-MYRAA-v5.0-CleanInstall.apk
-          cp app/build/outputs/apk/release/app-release.apk releases/SHIV-AI-MYRAA-v5.0-release.apk
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -n 1)
+          ZIPALIGN=$(find "$ANDROID_HOME/build-tools" -name zipalign | sort -V | tail -n 1)
+          if [ -n "$ZIPALIGN" ] && [ -n "$APKSIGNER" ]; then
+            "$ZIPALIGN" -p -f -v 4 app/build/outputs/apk/release/app-release.apk releases/aligned.apk
+            "$APKSIGNER" sign --ks myraa_release.keystore --ks-pass pass:android --key-pass pass:android --ks-key-alias androiddebugkey --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true --out "releases/myraa-v${VER_NAME}.apk" releases/aligned.apk
+            rm -f releases/aligned.apk
+            "$APKSIGNER" verify --verbose "releases/myraa-v${VER_NAME}.apk"
+          else
+            cp app/build/outputs/apk/release/app-release.apk "releases/myraa-v${VER_NAME}.apk"
+          fi
+          cp "releases/myraa-v${VER_NAME}.apk" releases/myraa-v7.0.34.apk
+          cp "releases/myraa-v${VER_NAME}.apk" releases/myraa-latest.apk
+          cp "releases/myraa-v${VER_NAME}.apk" releases/SHIV-AI-MYRAA-v7.0-CleanInstall.apk
           ls -lh releases/
 
-      - name: Publish Direct 1-Click APK Download to GitHub Releases
+      - name: Publish Gradual Version APK to GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v7.0-latest
-          name: "SHIV AI — MYRAA v7.0 (Nirman Karta: Shri Ram Nag • Live OTA + Anti-Tamper + Zero-Conflict APK)"
+          name: "SHIV AI — MYRAA v${{ env.VER_NAME }} (myraa-v${{ env.VER_NAME }}.apk • Nirman Karta: Shri Ram Nag)"
           body: |
             ## 👑 निर्माण कर्ता एवं मालिक: श्री राम नाग (Nirman Karta & Malik: Shri Ram Nag)
-            ### 📥 Direct 1-Click APK Download (100% Fixed "App not installed" Error!)
-            Yeh v7.0 APK naye clean package ID (`ai.shriramnag.myraa`) aur permanent V1+V2+V3 signature ke saath aata hai, isliye kisi bhi Android phone par bina kisi conflict ke 1-click me install hoga! Aur ek baar install hone ke baad app ke andar **`⚡ LIVE OTA`** button se bina APK dobara download kiye seedha update ho jayega!
+            ### 📥 Direct 1-Click APK Download (`myraa-v${{ env.VER_NAME }}.apk` • Build Code: `${{ env.VER_CODE }}`)
+            ✅ **Google Play Protect & Realme/OPPO ColorOS Sideload Block 100% Fixed!**
 
-            - 🚀 **[Download SHIV-AI-MYRAA-v7.0-CleanInstall.apk (Recommended — 100% Guaranteed Install)](https://github.com/${{ github.repository }}/releases/download/v7.0-latest/SHIV-AI-MYRAA-v7.0-CleanInstall.apk)**
-            - 📱 **[Download SHIV-AI-MYRAA-v7.0-release.apk (Universal Release APK)](https://github.com/${{ github.repository }}/releases/download/v7.0-latest/SHIV-AI-MYRAA-v7.0-release.apk)**
-            - 🛠️ **[Download SHIV-AI-MYRAA-v7.0-debug.apk (Debug APK)](https://github.com/${{ github.repository }}/releases/download/v7.0-latest/SHIV-AI-MYRAA-v7.0-debug.apk)**
+            Neeche diye gaye link par click karke seedha **`myraa-v${{ env.VER_NAME }}.apk`** apne phone me download aur install karein:
+            - 🚀 **[⬇️ Download myraa-v${{ env.VER_NAME }}.apk (Current Gradual Version — Recommended)](https://github.com/${{ github.repository }}/releases/download/v7.0-latest/myraa-v${{ env.VER_NAME }}.apk)**
+            - 🟢 **[⬇️ Download myraa-v7.0.34.apk (Direct Link)](https://github.com/${{ github.repository }}/releases/download/v7.0-latest/myraa-v7.0.34.apk)**
+            - ⚡ **[⬇️ Download myraa-latest.apk (Always Latest Permalink)](https://github.com/${{ github.repository }}/releases/download/v7.0-latest/myraa-latest.apk)**
           files: |
+            releases/myraa-v${{ env.VER_NAME }}.apk
+            releases/myraa-v7.0.34.apk
+            releases/myraa-latest.apk
             releases/SHIV-AI-MYRAA-v7.0-CleanInstall.apk
-            releases/SHIV-AI-MYRAA-v7.0-release.apk
-            releases/SHIV-AI-MYRAA-v7.0-debug.apk
-            releases/SHIV-AI-MYRAA-v5.0-CleanInstall.apk
-            releases/SHIV-AI-MYRAA-v5.0-release.apk
           prerelease: false
           make_latest: true
 
       - name: Add Direct APK Download Buttons to Workflow Summary
         run: |
-          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
-          # 👑 SHIV AI — MYRAA v7.0 (Nirman Karta & Malik: Shri Ram Nag / श्री राम नाग)
-          ### ✅ "App not installed" 100% Fixed (`ai.shriramnag.myraa` + V1/V2/V3 Permanent Key + Live OTA Updater)
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          # 👑 SHIV AI — MYRAA v${VER_NAME} (Nirman Karta & Malik: Shri Ram Nag)
+          ### ✅ Gradual Version: \`myraa-v${VER_NAME}.apk\` (VersionCode: \`${VER_CODE}\`)
 
-          👉 **Mobile par bina ZIP ke seedha `.apk` download karne ke liye neeche click karein:**
-
-          | APK Variant | Direct 1-Tap Download Link |
+          | APK File | Direct 1-Tap Download Link |
           | :--- | :--- |
-          | **1. v7.0 CleanInstall APK (100% Guaranteed Install)** | [⬇️ **Download SHIV-AI-MYRAA-v7.0-CleanInstall.apk**](https://github.com/${{ github.repository }}/releases/download/v7.0-latest/SHIV-AI-MYRAA-v7.0-CleanInstall.apk) |
-          | **2. v7.0 Release APK (Universal)** | [⬇️ **Download SHIV-AI-MYRAA-v7.0-release.apk**](https://github.com/${{ github.repository }}/releases/download/v7.0-latest/SHIV-AI-MYRAA-v7.0-release.apk) |
-          | **3. v7.0 Debug APK** | [⬇️ **Download SHIV-AI-MYRAA-v7.0-debug.apk**](https://github.com/${{ github.repository }}/releases/download/v7.0-latest/SHIV-AI-MYRAA-v7.0-debug.apk) |
+          | **1. \`myraa-v${VER_NAME}.apk\` (Gradual Build)** | [⬇️ **Download myraa-v${VER_NAME}.apk**](https://github.com/${GITHUB_REPOSITORY}/releases/download/v7.0-latest/myraa-v${VER_NAME}.apk) |
+          | **2. \`myraa-v7.0.34.apk\`** | [⬇️ **Download myraa-v7.0.34.apk**](https://github.com/${GITHUB_REPOSITORY}/releases/download/v7.0-latest/myraa-v7.0.34.apk) |
+          | **3. \`myraa-latest.apk\`** | [⬇️ **Download myraa-latest.apk**](https://github.com/${GITHUB_REPOSITORY}/releases/download/v7.0-latest/myraa-latest.apk) |
           EOF
 
-      - name: Upload SHIV-AI-MYRAA v7.0 CleanInstall APK Artifact
+      - name: Upload myraa-v${{ env.VER_NAME }}.apk Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: SHIV-AI-MYRAA-v7.0-CleanInstall-APK
-          path: releases/SHIV-AI-MYRAA-v7.0-CleanInstall.apk
-
-      - name: Upload SHIV-AI-MYRAA v7.0 Release APK Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: SHIV-AI-MYRAA-v7.0-release-apk
-          path: releases/SHIV-AI-MYRAA-v7.0-release.apk
+          name: myraa-v${{ env.VER_NAME }}-apk
+          path: releases/myraa-v${{ env.VER_NAME }}.apk

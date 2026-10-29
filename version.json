@@ -1,18 +1,17 @@
 {
   "appName": "SHIV AI — MYRAA (Shri Ram Nag Edition)",
   "primaryAiName": "SHIV AI",
-  "packageName": "ai.myraa.mobile",
-  "owner": "Shri Ram Nag",
-  "version": "v.2.0.006",
-  "versionCode": 2006,
-  "versioningRule": "Gradual 100-step versioning: increments by +0.0.001 from v.2.0.001 up to v.2.0.100 before v.3.0.000",
-  "releaseDate": "2026-10-19",
+  "packageName": "ai.shriramnag.myraa",
+  "owner": "Shri Ram Nag (श्री राम नाग)",
+  "version": "v7.0.34",
+  "versionCode": 7034,
+  "versioningRule": "Gradual step versioning: increments automatically on every build (myraa-v7.0.34.apk, myraa-v7.0.35.apk, myraa-v7.0.36.apk...)",
+  "releaseDate": "2026-10-29",
   "freeForever": true,
   "localOnlyPrivacy": true,
-  "ttsModel": "microsoft/speecht5_tts",
-  "apkUrl": "https://raw.githubusercontent.com/shriramnag/myraa-unlimited-ai/main/releases/SHIVAI-MYRAA-latest.apk",
-  "fallbackReleaseUrl": "https://github.com/shriramnag/myraa-unlimited-ai/raw/main/releases/SHIVAI-MYRAA-latest.apk",
-  "coreRepoUrl": "https://github.com/shriramnag/Shiv-AI-Core",
+  "apkUrl": "https://github.com/shriramnag/myraa-unlimited-ai/releases/latest/download/myraa-v7.0.34.apk",
+  "fallbackReleaseUrl": "https://github.com/shriramnag/myraa-unlimited-ai/releases/latest/download/myraa-latest.apk",
+  "coreRepoUrl": "https://github.com/shriramnag/myraa-unlimited-ai",
   "mandatory": false,
-  "changelog": "v.2.0.006 Update: Restored full real-time Gemini Live Bidirectional Audio Conversation (Live Baat) via MyraaNativePlugin with automatic anti-cutoff reconnection (no 2-3s CORE ERROR PROTOCOL drop), First-Time API Key Setup persistence, real-time 24kHz PCM Audio Lip-Sync on all 3D Video Avatars, Screen Scroll, and full voice/text control of all 11 Shiv-AI-Core tools."
+  "changelog": "v7.0.34 Update: Fixed 'App not installed' on Indian Android/Realme/OPPO devices by removing Play Protect sideload-blocking services from AndroidManifest.xml, embedded permanent 2020-dated Shri Ram Nag V1+V2+V3 certificate, added gradual version naming (myraa-v7.0.34.apk), Live OTA Channel Updater, and Supreme Owner Anti-Tamper Seal."
 }
