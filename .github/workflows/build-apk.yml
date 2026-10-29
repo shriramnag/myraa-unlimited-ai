@@ -23,11 +23,11 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Calculate Gradual Version (v7.0.35, v7.0.36, v7.0.37...)
+      - name: Calculate Gradual Version (v7.0.36, v7.0.37, v7.0.38...)
         run: |
-          PATCH_NUM=$((28 + ${GITHUB_RUN_NUMBER:-7}))
-          if [ "$PATCH_NUM" -lt 35 ]; then
-            PATCH_NUM=35
+          PATCH_NUM=$((28 + ${GITHUB_RUN_NUMBER:-8}))
+          if [ "$PATCH_NUM" -lt 36 ]; then
+            PATCH_NUM=36
           fi
           VER_NAME="7.0.${PATCH_NUM}"
           VER_CODE=$((7000 + PATCH_NUM))

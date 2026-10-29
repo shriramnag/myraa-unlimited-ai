@@ -14,6 +14,7 @@ import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.AudioTrack;
+import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.media.audiofx.AcousticEchoCanceler;
 import android.media.audiofx.AutomaticGainControl;
@@ -43,10 +44,12 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -91,6 +94,7 @@ public class BridgeActivity extends AppCompatActivity {
     private AudioRecord liveCallAudioRecord;
     private Thread liveCallMicThread;
     private AudioTrack livePcmAudioTrack;
+    private MediaPlayer cloudMediaPlayer;
     private final Object audioTrackLock = new Object();
     private final ExecutorService pcmPlaybackExecutor = Executors.newSingleThreadExecutor();
     private volatile long lastAudioTrackWriteMs = 0L;
@@ -574,12 +578,64 @@ public class BridgeActivity extends AppCompatActivity {
         } catch (Exception ignored) {}
         synchronized (audioTrackLock) {
             try {
+                if (cloudMediaPlayer != null) {
+                    if (cloudMediaPlayer.isPlaying()) {
+                        cloudMediaPlayer.stop();
+                    }
+                    cloudMediaPlayer.release();
+                    cloudMediaPlayer = null;
+                }
+            } catch (Exception ignored) {}
+            try {
                 if (livePcmAudioTrack != null && livePcmAudioTrack.getState() == AudioTrack.STATE_INITIALIZED) {
                     livePcmAudioTrack.pause();
                     livePcmAudioTrack.flush();
                     livePcmAudioTrack.play();
                 }
             } catch (Exception ignored) {}
+        }
+    }
+
+    public void playBase64Mp3Chunk(final String base64Mp3) {
+        if (base64Mp3 == null || base64Mp3.isEmpty()) return;
+        pcmPlaybackExecutor.execute(() -> {
+            try {
+                byte[] mp3Bytes = Base64.decode(base64Mp3, Base64.DEFAULT);
+                if (mp3Bytes == null || mp3Bytes.length == 0) return;
+                playMp3BytesInternal(mp3Bytes);
+            } catch (Exception ignored) {}
+        });
+    }
+
+    private void playMp3BytesInternal(byte[] mp3Bytes) throws Exception {
+        File tempMp3 = new File(getCacheDir(), "myraa_realistic_voice.mp3");
+        try (FileOutputStream fos = new FileOutputStream(tempMp3, false)) {
+            fos.write(mp3Bytes);
+        }
+        synchronized (audioTrackLock) {
+            if (cloudMediaPlayer != null) {
+                try {
+                    cloudMediaPlayer.stop();
+                    cloudMediaPlayer.release();
+                } catch (Exception ignored) {}
+                cloudMediaPlayer = null;
+            }
+            cloudMediaPlayer = new MediaPlayer();
+            cloudMediaPlayer.setAudioAttributes(
+                new AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                    .build()
+            );
+            try (FileInputStream fis = new FileInputStream(tempMp3)) {
+                cloudMediaPlayer.setDataSource(fis.getFD());
+                cloudMediaPlayer.prepare();
+            }
+            lastAudioTrackWriteMs = System.currentTimeMillis();
+            cloudMediaPlayer.setOnCompletionListener(mp -> {
+                lastAudioTrackWriteMs = 0L;
+            });
+            cloudMediaPlayer.start();
         }
     }
 
@@ -729,17 +785,50 @@ public class BridgeActivity extends AppCompatActivity {
 
     public void speakNativeOnUi(final String text, final String lang) {
         if (text == null || text.trim().isEmpty()) return;
-        runOnUiThread(() -> {
+        final String cleanText = text.trim().length() > 220 ? text.trim().substring(0, 220) : text.trim();
+        final String tl = (lang != null && lang.toLowerCase(Locale.ROOT).startsWith("en")) ? "en-IN" : "hi";
+
+        // 1. Try Natural Google Cloud Neural Voice stream first (Zero Robotic Sound!)
+        pcmPlaybackExecutor.execute(() -> {
             try {
-                if (ttsReady && nativeTts != null) {
-                    selectBestHumanTtsVoice(lang);
-                    nativeTts.setPitch(currentTtsPitch);
-                    nativeTts.setSpeechRate(currentTtsRate);
-                    Bundle params = new Bundle();
-                    params.putInt(TextToSpeech.Engine.KEY_PARAM_STREAM, AudioManager.STREAM_MUSIC);
-                    nativeTts.speak(text, TextToSpeech.QUEUE_FLUSH, params, "myraa-utt-" + System.currentTimeMillis());
+                String ttsUrl = "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl="
+                    + URLEncoder.encode(tl, "UTF-8")
+                    + "&q=" + URLEncoder.encode(cleanText, "UTF-8");
+                HttpURLConnection conn = (HttpURLConnection) new URL(ttsUrl).openConnection();
+                conn.setRequestMethod("GET");
+                conn.setConnectTimeout(3500);
+                conn.setReadTimeout(4500);
+                conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 14)");
+                if (conn.getResponseCode() == 200) {
+                    java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+                    try (InputStream is = conn.getInputStream()) {
+                        byte[] buf = new byte[4096];
+                        int n;
+                        while ((n = is.read(buf)) != -1) {
+                            baos.write(buf, 0, n);
+                        }
+                    }
+                    byte[] mp3Data = baos.toByteArray();
+                    if (mp3Data.length > 256) {
+                        playMp3BytesInternal(mp3Data);
+                        return;
+                    }
                 }
             } catch (Exception ignored) {}
+
+            // 2. Offline Fallback only if internet is completely unavailable
+            runOnUiThread(() -> {
+                try {
+                    if (ttsReady && nativeTts != null) {
+                        selectBestHumanTtsVoice(lang);
+                        nativeTts.setPitch(currentTtsPitch);
+                        nativeTts.setSpeechRate(currentTtsRate);
+                        Bundle params = new Bundle();
+                        params.putInt(TextToSpeech.Engine.KEY_PARAM_STREAM, AudioManager.STREAM_MUSIC);
+                        nativeTts.speak(cleanText, TextToSpeech.QUEUE_FLUSH, params, "myraa-utt-" + System.currentTimeMillis());
+                    }
+                } catch (Exception ignored) {}
+            });
         });
     }
 
@@ -902,7 +991,17 @@ public class BridgeActivity extends AppCompatActivity {
         }
 
         @JavascriptInterface
+        public void playBase64Mp3(String base64Mp3) {
+            activity.playBase64Mp3Chunk(base64Mp3);
+        }
+
+        @JavascriptInterface
         public void pullLiveChannelUpdate() {
+            activity.pullLiveChannelUpdateFromGithub();
+        }
+
+        @JavascriptInterface
+        public void pullLiveChannelUpdate(String optionalUrl) {
             activity.pullLiveChannelUpdateFromGithub();
         }
 
