@@ -1,24 +1,32 @@
 {
   "name": "myraa-unlimited-ai",
-  "version": "2.0.0",
-  "description": "MYRAA v2.0 — Unlimited Lifetime 3D Holographic AI Assistant powered by Google Gemini Live, Multi-Key Rotator & Keyless AI Fallback",
-  "private": false,
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/shriramnag/myraa-unlimited-ai.git"
-  },
+  "version": "3.0.0",
+  "description": "MYRAA v3.0 / SHIV AI v.2.0.006 — 3D Holographic AI Companion, Android Native Controller, 11 Tools & Long-Term Brain Database for Shri Ram Nag",
+  "private": true,
+  "type": "module",
   "scripts": {
-    "web:dev": "cd web && npm run dev",
-    "web:build": "cd web && npm run build",
-    "web:preview": "cd web && npm run preview",
-    "server:dev": "cd server && npm run dev",
-    "server:build": "cd server && npm run build",
-    "server:start": "cd server && npm run start",
-    "android:sync": "cd web && npx cap sync android",
-    "android:open": "cd web && npx cap open android",
-    "github:push": "bash ./push-to-github.sh"
+    "dev": "vite --host 0.0.0.0 --port 3000",
+    "build": "vite build && mkdir -p android/app/src/main/assets/public && cp -r dist/* android/app/src/main/assets/public/",
+    "preview": "vite preview --host 0.0.0.0 --port 3000",
+    "lint": "tsc --noEmit",
+    "apk:sync": "npm run build",
+    "apk:build": "bash ./build-apk.sh"
   },
-  "keywords": ["myraa", "gemini-live", "threejs", "capacitor", "ai-assistant", "unlimited-ai"],
-  "author": "shriramnag",
-  "license": "MIT"
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "lucide-react": "^0.344.0",
+    "clsx": "^2.1.0",
+    "tailwind-merge": "^2.2.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.3",
+    "typescript": "^5.2.2",
+    "vite": "^5.2.11"
+  }
 }

@@ -1,0 +1,6 @@
+{
+  "name": "MYRAA",
+  "description": "3D Holographic AI Companion with Long-Term Brain Database & Android Controls for Shri Ram Nag",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
