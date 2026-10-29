@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000",
-    "build": "vite build && mkdir -p android/app/src/main/assets/public && cp -r dist/* android/app/src/main/assets/public/",
+    "build": "vite build && mkdir -p app/src/main/assets/public android/app/src/main/assets/public && cp -r dist/* app/src/main/assets/public/ && cp -r dist/* android/app/src/main/assets/public/",
     "preview": "vite preview --host 0.0.0.0 --port 3000",
     "lint": "tsc --noEmit",
     "apk:sync": "npm run build",

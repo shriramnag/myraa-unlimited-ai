@@ -1,4 +1,4 @@
-# Node modules & caches (Note: web/dist/ and releases/*.apk are tracked for OTA & Web bundle!)
+# Node modules & caches
 node_modules/
 .cache/
 
@@ -9,6 +9,7 @@ node_modules/
 *.pem
 *.key
 *.keystore
+!debug.keystore
 
 # Logs
 logs/
@@ -16,6 +17,7 @@ logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+public/assets/aistudio/*.zip
 
 # OS & Editor
 .DS_Store
@@ -25,10 +27,14 @@ Thumbs.db
 *.swp
 *.swo
 
-# Android intermediate build caches only (keep releases/*.apk tracked!)
+# Android intermediate build caches only (keep app/src/** tracked!)
+.gradle/
+build/
+app/build/
 android/.gradle/
 android/app/build/
 android/build/
 *.aab
 !releases/*.apk
 !web/dist/**
+!app/src/**
