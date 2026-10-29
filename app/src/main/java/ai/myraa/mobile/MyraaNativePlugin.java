@@ -797,6 +797,69 @@ public class MyraaNativePlugin extends Plugin {
                     result.put("message", Build.MANUFACTURER + " " + Build.MODEL + " (Android " + Build.VERSION.RELEASE + ", SDK " + Build.VERSION.SDK_INT + ")");
                     break;
                 }
+                case "READ_SCREEN_UI": {
+                    MyraaAccessibilityService svc = MyraaAccessibilityService.getInstance();
+                    String summary = (svc != null)
+                        ? svc.inspectActiveScreenSummary()
+                        : "Accessibility Service not enabled yet. Tap OPEN_ACCESSIBILITY_SETTINGS to enable MYRAA Safe UI Automation.";
+                    result.put("ok", svc != null);
+                    result.put("summary", summary);
+                    result.put("message", summary);
+                    break;
+                }
+                case "AUTO_TYPE_TEXT": {
+                    MyraaAccessibilityService svc = MyraaAccessibilityService.getInstance();
+                    String textToType = message.isEmpty() ? query : message;
+                    boolean typed = (svc != null) && svc.performSafeTextEntry(target, textToType);
+                    result.put("ok", typed);
+                    result.put("message", typed ? ("Typed '" + textToType + "' on screen.") : "Enable MYRAA Accessibility Service to auto-type into apps.");
+                    break;
+                }
+                case "TAP_COORDINATES": {
+                    MyraaAccessibilityService svc = MyraaAccessibilityService.getInstance();
+                    int x = actionObj.optInt("x", 540);
+                    int y = actionObj.optInt("y", 960);
+                    boolean tapped = (svc != null) && svc.performTapAtCoordinates(x, y);
+                    result.put("ok", tapped);
+                    result.put("message", tapped ? ("Tapped screen at (" + x + ", " + y + ")") : "Enable Accessibility Service for coordinate tap.");
+                    break;
+                }
+                case "GLOBAL_HOME": {
+                    MyraaAccessibilityService svc = MyraaAccessibilityService.getInstance();
+                    boolean ok = (svc != null) && svc.performSafeGlobalHome();
+                    result.put("ok", ok);
+                    result.put("message", ok ? "Navigated to Android Home Screen." : "Enable Accessibility Service for Global Home.");
+                    break;
+                }
+                case "GLOBAL_BACK": {
+                    MyraaAccessibilityService svc = MyraaAccessibilityService.getInstance();
+                    boolean ok = (svc != null) && svc.performSafeGlobalBack();
+                    result.put("ok", ok);
+                    result.put("message", ok ? "Performed Android Global Back." : "Enable Accessibility Service for Global Back.");
+                    break;
+                }
+                case "GLOBAL_RECENTS": {
+                    MyraaAccessibilityService svc = MyraaAccessibilityService.getInstance();
+                    boolean ok = (svc != null) && svc.performSafeGlobalRecents();
+                    result.put("ok", ok);
+                    result.put("message", ok ? "Opened Recent Apps Switcher." : "Enable Accessibility Service for Global Recents.");
+                    break;
+                }
+                case "GLOBAL_SCREENSHOT": {
+                    MyraaAccessibilityService svc = MyraaAccessibilityService.getInstance();
+                    boolean ok = (svc != null) && svc.performSafeGlobalScreenshot();
+                    result.put("ok", ok);
+                    result.put("message", ok ? "Captured native Android OS Screenshot." : "Enable Accessibility Service to capture screenshot.");
+                    break;
+                }
+                case "WAKE_WORD_STATUS": {
+                    result.put("ok", true);
+                    result.put("running", MyraaBackgroundService.isRunning);
+                    result.put("lastWakePhrase", MyraaBackgroundService.lastHeardWakePhrase);
+                    result.put("message", "Wake-Word Guard (" + (MyraaBackgroundService.isRunning ? "ACTIVE" : "STANDBY") + ") • Last phrase: " +
+                        (MyraaBackgroundService.lastHeardWakePhrase.isEmpty() ? "None" : MyraaBackgroundService.lastHeardWakePhrase));
+                    break;
+                }
                 default: {
                     result.put("ok", true);
                     result.put("message", "SHIV AI action executed: " + action);

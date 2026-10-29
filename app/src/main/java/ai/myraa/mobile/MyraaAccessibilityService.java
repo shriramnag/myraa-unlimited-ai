@@ -7,24 +7,17 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.graphics.Path;
 import android.media.AudioManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
 /**
- * SHIV AI — MYRAA (v.2.0.003): HUMAN-LIKE ANDROID ACCESSIBILITY SERVICE
+ * SHIV AI — MYRAA (v6.0): AUTONOMOUS SCREEN AGENT & HUMAN-LIKE ACCESSIBILITY SERVICE
  * Supreme Owner: Shri Ram Nag (श्री राम नाग) | Primary AI: SHIV AI (शिव एआई)
- *
- * Capabilities:
- * 1. Scroll Up / Down / Left / Right (performSafeScroll & dispatchHumanSwipeGesture)
- * 2. Recognize & Click Any Button on Screen (performSafeClick)
- * 3. Like / Dislike Videos & Posts (performLikeOrDislike)
- * 4. Copy Text from Screen to Clipboard (performCopyTextFromScreen)
- * 5. Click Three-Dots (⋮ / More options) Menu (performClickThreeDotsMenu)
- * 6. Mute / Unmute Device Audio (performMuteOrUnmute)
- * 7. Auto-Click "Install" / "Download" in Google Play Store (performPlayStoreAutoInstallClick)
  */
 public class MyraaAccessibilityService extends AccessibilityService {
 
@@ -39,7 +32,7 @@ public class MyraaAccessibilityService extends AccessibilityService {
         super.onServiceConnected();
         instance = this;
         AuditLogManager.recordEvent("INFO", "ACCESSIBILITY_SERVICE", "SERVICE_CONNECTED", "ALLOWED",
-            "SHIV AI AccessibilityService connected for Owner Shri Ram Nag.");
+            "SHIV AI Autonomous Screen Agent AccessibilityService connected for Owner Shri Ram Nag.");
     }
 
     @Override
@@ -104,9 +97,6 @@ public class MyraaAccessibilityService extends AccessibilityService {
         return false;
     }
 
-    /**
-     * 1. Recognizes any visible button/label by text or contentDescription and clicks it like a human.
-     */
     public boolean performSafeClick(String targetLabel) {
         AccessibilityNodeInfo root = getRootInActiveWindow();
         SecurityPolicyEngine.PolicyDecision check = verifyScreenSafeForAutomation(root);
@@ -134,9 +124,19 @@ public class MyraaAccessibilityService extends AccessibilityService {
         return false;
     }
 
-    /**
-     * 2. Scrolls the screen up or down like a human.
-     */
+    public boolean performTapAtCoordinates(int x, int y) {
+        AccessibilityNodeInfo root = getRootInActiveWindow();
+        if (root != null) {
+            SecurityPolicyEngine.PolicyDecision check = verifyScreenSafeForAutomation(root);
+            if (!check.allowed) return false;
+        }
+        Path clickPath = new Path();
+        clickPath.moveTo(Math.max(1, x), Math.max(1, y));
+        GestureDescription.Builder builder = new GestureDescription.Builder();
+        builder.addStroke(new GestureDescription.StrokeDescription(clickPath, 0, 80));
+        return dispatchGesture(builder.build(), null, null);
+    }
+
     public boolean performSafeScroll(boolean forward) {
         AccessibilityNodeInfo root = getRootInActiveWindow();
         SecurityPolicyEngine.PolicyDecision check = verifyScreenSafeForAutomation(root);
@@ -159,9 +159,6 @@ public class MyraaAccessibilityService extends AccessibilityService {
         return dispatchGesture(builder.build(), null, null);
     }
 
-    /**
-     * 3. Clicks Like or Dislike button on YouTube, Reels, or social posts.
-     */
     public boolean performLikeOrDislike(boolean isLike) {
         String[] labels = isLike
             ? new String[]{"Like", "like this", "पसंद", "लाइक"}
@@ -172,9 +169,6 @@ public class MyraaAccessibilityService extends AccessibilityService {
         return false;
     }
 
-    /**
-     * 4. Copies visible text from screen into the Android Clipboard.
-     */
     public String performCopyTextFromScreen(String queryText) {
         AccessibilityNodeInfo root = getRootInActiveWindow();
         SecurityPolicyEngine.PolicyDecision check = verifyScreenSafeForAutomation(root);
@@ -192,9 +186,39 @@ public class MyraaAccessibilityService extends AccessibilityService {
         return resultText;
     }
 
-    /**
-     * 5. Finds and clicks the Three-Dots (⋮ / More options) menu button on any screen.
-     */
+    public String inspectActiveScreenSummary() {
+        AccessibilityNodeInfo root = getRootInActiveWindow();
+        SecurityPolicyEngine.PolicyDecision check = verifyScreenSafeForAutomation(root);
+        if (!check.allowed) {
+            return "[SHIELDED] " + check.reason;
+        }
+        String pkg = root.getPackageName() != null ? root.getPackageName().toString() : "unknown";
+        List<String> buttons = new ArrayList<>();
+        StringBuilder texts = new StringBuilder();
+        collectNodesSummary(root, buttons, texts, 0);
+        return "Active App: " + pkg + "\nClickable Buttons (" + buttons.size() + "): " +
+            String.join(", ", buttons.subList(0, Math.min(18, buttons.size()))) +
+            "\nVisible Text:\n" + texts.toString().trim();
+    }
+
+    private void collectNodesSummary(AccessibilityNodeInfo node, List<String> buttons, StringBuilder texts, int depth) {
+        if (node == null || node.isPassword() || depth > 14) return;
+        CharSequence t = node.getText();
+        CharSequence d = node.getContentDescription();
+        String label = (t != null && t.length() > 0) ? t.toString().trim()
+            : ((d != null && d.length() > 0) ? d.toString().trim() : "");
+        if (!label.isEmpty() && label.length() < 80) {
+            if (node.isClickable() && !buttons.contains(label)) {
+                buttons.add(label);
+            } else if (texts.length() < 600) {
+                texts.append("• ").append(label).append("\n");
+            }
+        }
+        for (int i = 0; i < node.getChildCount(); i++) {
+            collectNodesSummary(node.getChild(i), buttons, texts, depth + 1);
+        }
+    }
+
     public boolean performClickThreeDotsMenu() {
         String[] menuLabels = new String[]{"More options", "More", "⋮", "अधिक विकल्प", "Menu", "Options"};
         for (String label : menuLabels) {
@@ -203,9 +227,6 @@ public class MyraaAccessibilityService extends AccessibilityService {
         return false;
     }
 
-    /**
-     * 6. Mutes or unmutes device media stream volume.
-     */
     public boolean performMuteOrUnmuteAudio(boolean mute) {
         AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         if (am == null) return false;
@@ -217,9 +238,6 @@ public class MyraaAccessibilityService extends AccessibilityService {
         return true;
     }
 
-    /**
-     * 7. Automatically clicks the "Install" / "Download" button in Google Play Store.
-     */
     public boolean performPlayStoreAutoInstallClick() {
         String[] installLabels = new String[]{"Install", "इंस्टॉल करें", "Download", "Update"};
         for (String label : installLabels) {
@@ -238,24 +256,66 @@ public class MyraaAccessibilityService extends AccessibilityService {
         SecurityPolicyEngine.PolicyDecision check = verifyScreenSafeForAutomation(root);
         if (!check.allowed) return false;
 
-        List<AccessibilityNodeInfo> matches = root.findAccessibilityNodeInfosByText(targetLabel);
-        if (matches != null) {
-            for (AccessibilityNodeInfo node : matches) {
-                if (node.isPassword()) continue;
-                if (node.isEditable()) {
-                    Bundle args = new Bundle();
-                    args.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, textToEnter);
-                    if (node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)) {
-                        return true;
+        if (targetLabel != null && !targetLabel.isEmpty()) {
+            List<AccessibilityNodeInfo> matches = root.findAccessibilityNodeInfosByText(targetLabel);
+            if (matches != null) {
+                for (AccessibilityNodeInfo node : matches) {
+                    if (node.isPassword()) continue;
+                    if (node.isEditable()) {
+                        Bundle args = new Bundle();
+                        args.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, textToEnter);
+                        if (node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)) {
+                            return true;
+                        }
                     }
                 }
             }
         }
+        // Fallback: type into currently focused input or first editable node on screen
+        AccessibilityNodeInfo focused = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT);
+        if (focused != null && focused.isEditable() && !focused.isPassword()) {
+            Bundle args = new Bundle();
+            args.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, textToEnter);
+            if (focused.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)) {
+                return true;
+            }
+        }
+        AccessibilityNodeInfo firstEdit = findFirstEditableNode(root);
+        if (firstEdit != null) {
+            Bundle args = new Bundle();
+            args.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, textToEnter);
+            return firstEdit.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args);
+        }
         return false;
+    }
+
+    private AccessibilityNodeInfo findFirstEditableNode(AccessibilityNodeInfo node) {
+        if (node == null || node.isPassword()) return null;
+        if (node.isEditable()) return node;
+        for (int i = 0; i < node.getChildCount(); i++) {
+            AccessibilityNodeInfo found = findFirstEditableNode(node.getChild(i));
+            if (found != null) return found;
+        }
+        return null;
     }
 
     public boolean performSafeGlobalBack() {
         return performGlobalAction(GLOBAL_ACTION_BACK);
+    }
+
+    public boolean performSafeGlobalHome() {
+        return performGlobalAction(GLOBAL_ACTION_HOME);
+    }
+
+    public boolean performSafeGlobalRecents() {
+        return performGlobalAction(GLOBAL_ACTION_RECENTS);
+    }
+
+    public boolean performSafeGlobalScreenshot() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            return performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT);
+        }
+        return false;
     }
 
     private AccessibilityNodeInfo findNodeByContentDescription(AccessibilityNodeInfo node, String query) {

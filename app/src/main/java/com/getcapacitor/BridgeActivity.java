@@ -143,6 +143,24 @@ public class BridgeActivity extends AppCompatActivity {
         });
 
         webView.loadUrl("file:///android_asset/public/index.html");
+        handleWakeIntent(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleWakeIntent(intent);
+    }
+
+    private void handleWakeIntent(Intent intent) {
+        if (intent == null) return;
+        final String wakeCmd = intent.getStringExtra("wake_command");
+        if (wakeCmd != null && !wakeCmd.trim().isEmpty()) {
+            intent.removeExtra("wake_command");
+            new android.os.Handler(getMainLooper()).postDelayed(() ->
+                dispatchVoiceEventToJs("result", wakeCmd.trim(), true), 650);
+        }
     }
 
     private void initNativeTts() {

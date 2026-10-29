@@ -14,27 +14,38 @@ import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import androidx.core.app.NotificationCompat;
 import java.util.ArrayList;
+import java.util.Locale;
 
+/**
+ * SHIV AI — MYRAA (v6.0): ALWAYS-ON WAKE-WORD ("HEY MYRAA" / "JAI SHIV") FOREGROUND SERVICE
+ * Supreme Owner: Shri Ram Nag (श्री राम नाग)
+ */
 public class MyraaBackgroundService extends Service {
     public static final String CHANNEL_ID = "MYRAA_BACKGROUND_VOICE_CHANNEL";
     public static final int NOTIFICATION_ID = 1001;
+    public static volatile boolean isRunning = false;
+    public static volatile String lastHeardWakePhrase = "";
+
     private SpeechRecognizer speechRecognizer;
 
     @Override
     public void onCreate() {
         super.onCreate();
+        isRunning = true;
         createNotificationChannel();
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Notification notification = buildNotification("MYRAA is listening in background...");
+        isRunning = true;
+        Notification notification = buildNotification("Wake-Word Active: Say 'Hey MYRAA' or 'Jai Shiv'...");
         startForeground(NOTIFICATION_ID, notification);
         startListening();
         return START_STICKY;
     }
 
     private void startListening() {
+        if (!SpeechRecognizer.isRecognitionAvailable(this)) return;
         if (speechRecognizer == null) {
             speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
             speechRecognizer.setRecognitionListener(new RecognitionListener() {
@@ -48,7 +59,7 @@ public class MyraaBackgroundService extends Service {
                     ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
                     if (matches != null && !matches.isEmpty()) {
                         String query = matches.get(0);
-                        // Send broadcast or wake Myraa
+                        handleWakePhrase(query);
                     }
                     restartSoon();
                 }
@@ -59,23 +70,49 @@ public class MyraaBackgroundService extends Service {
 
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "hi-IN");
         intent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
         try {
             speechRecognizer.startListening(intent);
         } catch (Exception ignored) {}
     }
 
+    private void handleWakePhrase(String phrase) {
+        if (phrase == null || phrase.trim().isEmpty()) return;
+        lastHeardWakePhrase = phrase.trim();
+        String lower = lastHeardWakePhrase.toLowerCase(Locale.ROOT);
+        if (lower.contains("myraa") || lower.contains("myra") || lower.contains("मायरा") ||
+            lower.contains("shiv") || lower.contains("शिव") || lower.contains("hello") ||
+            lower.contains("flashlight") || lower.contains("torch")) {
+
+            NotificationManager nm = getSystemService(NotificationManager.class);
+            if (nm != null) {
+                nm.notify(NOTIFICATION_ID, buildNotification("Wake Command: " + lastHeardWakePhrase));
+            }
+
+            Intent wakeIntent = new Intent(this, MainActivity.class);
+            wakeIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            wakeIntent.putExtra("wake_command", lastHeardWakePhrase);
+            try {
+                startActivity(wakeIntent);
+            } catch (Exception ignored) {}
+        }
+    }
+
     private void restartSoon() {
-        new android.os.Handler(getMainLooper()).postDelayed(this::startListening, 1000);
+        if (!isRunning) return;
+        new android.os.Handler(getMainLooper()).postDelayed(() -> {
+            if (isRunning) startListening();
+        }, 1200);
     }
 
     private Notification buildNotification(String text) {
         Intent launchIntent = getPackageManager().getLaunchIntentForPackage(getPackageName());
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, launchIntent, 
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, launchIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         return new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("MYRAA Background Voice Mode")
+                .setContentTitle("SHIV AI — MYRAA Wake-Word Guard")
                 .setContentText(text)
                 .setSmallIcon(android.R.drawable.ic_btn_speak_now)
                 .setContentIntent(pendingIntent)
@@ -87,7 +124,7 @@ public class MyraaBackgroundService extends Service {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
                     CHANNEL_ID,
-                    "MYRAA Background Voice Service",
+                    "MYRAA Wake-Word Background Service",
                     NotificationManager.IMPORTANCE_LOW
             );
             NotificationManager manager = getSystemService(NotificationManager.class);
@@ -97,6 +134,7 @@ public class MyraaBackgroundService extends Service {
 
     @Override
     public void onDestroy() {
+        isRunning = false;
         if (speechRecognizer != null) {
             speechRecognizer.destroy();
             speechRecognizer = null;
