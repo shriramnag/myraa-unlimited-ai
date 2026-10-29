@@ -7,17 +7,12 @@ on:
 
 jobs:
   build-android-apk:
-    name: Build Signed Debug & Release APK
+    name: Build Signed Debug, Release & CleanInstall APK
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-
-      - name: Set up Node.js 22
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -34,7 +29,7 @@ jobs:
           SDKMANAGER=$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager | head -n 1)
           if [ -n "$SDKMANAGER" ]; then
             yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
-            "$SDKMANAGER" "platforms;android-35" "build-tools;35.0.0" "platform-tools"
+            "$SDKMANAGER" "platforms;android-34" "build-tools;34.0.0" "platform-tools"
           fi
 
       - name: Verify Pre-Bundled Android WebView Assets
@@ -45,19 +40,19 @@ jobs:
           rm -rf app/src/main/assets/public/assets/aistudio || true
           ls -la app/src/main/assets/public/
 
-      - name: Prepare Keystore & Gradle Config for Public Maven CI
+      - name: Prepare V1+V2 Keystore & Gradle Config for Universal Phone Install
         run: |
-          if [ ! -f debug.keystore ]; then
-            keytool -genkeypair -v \
-              -keystore debug.keystore \
-              -storepass android \
-              -alias androiddebugkey \
-              -keypass android \
-              -keyalg RSA \
-              -keysize 2048 \
-              -validity 10000 \
-              -dname "CN=Shri Ram Nag,OU=SHIV AI,O=MYRAA,L=Jodhpur,ST=Rajasthan,C=IN"
-          fi
+          rm -f debug.keystore
+          keytool -genkeypair -v \
+            -keystore debug.keystore \
+            -storepass android \
+            -alias androiddebugkey \
+            -keypass android \
+            -keyalg RSA \
+            -keysize 2048 \
+            -startdate "2020/01/01 00:00:00" \
+            -validity 10000 \
+            -dname "CN=Shri Ram Nag,OU=SHIV AI,O=MYRAA,L=Jodhpur,ST=Rajasthan,C=IN"
 
           cat > settings.gradle.kts << 'EOF'
           pluginManagement {
@@ -91,14 +86,14 @@ jobs:
 
           android {
               namespace = "ai.myraa.mobile"
-              compileSdk = 35
+              compileSdk = 34
 
               defaultConfig {
-                  applicationId = "ai.myraa.mobile"
+                  applicationId = project.findProperty("customAppId")?.toString() ?: "ai.myraa.mobile"
                   minSdk = 24
-                  targetSdk = 35
-                  versionCode = 300
-                  versionName = "3.0.0"
+                  targetSdk = 34
+                  versionCode = 400
+                  versionName = "4.0.0"
               }
 
               signingConfigs {
@@ -107,22 +102,33 @@ jobs:
                       storePassword = "android"
                       keyAlias = "androiddebugkey"
                       keyPassword = "android"
+                      enableV1Signing = true
+                      enableV2Signing = true
                   }
                   getByName("debug") {
                       storeFile = file("${rootDir}/debug.keystore")
                       storePassword = "android"
                       keyAlias = "androiddebugkey"
                       keyPassword = "android"
+                      enableV1Signing = true
+                      enableV2Signing = true
                   }
               }
 
               buildTypes {
                   release {
                       isMinifyEnabled = false
+                      isShrinkResources = false
                       signingConfig = signingConfigs.getByName("release")
                   }
                   debug {
                       signingConfig = signingConfigs.getByName("debug")
+                  }
+              }
+
+              packaging {
+                  jniLibs {
+                      useLegacyPackaging = true
                   }
               }
 
@@ -159,17 +165,29 @@ jobs:
         with:
           gradle-version: '8.10.2'
 
-      - name: Build Signed Debug & Release APKs
-        run: gradle assembleDebug assembleRelease --no-daemon --stacktrace
+      - name: Build Signed Debug, Release & CleanInstall APKs
+        run: |
+          gradle assembleDebug assembleRelease --no-daemon --stacktrace
+          mkdir -p releases
+          cp app/build/outputs/apk/debug/app-debug.apk releases/SHIV-AI-MYRAA-v4.0-debug.apk
+          cp app/build/outputs/apk/release/app-release.apk releases/SHIV-AI-MYRAA-v4.0-release.apk
+          gradle assembleRelease -PcustomAppId=ai.myraa.omni --no-daemon --stacktrace
+          cp app/build/outputs/apk/release/app-release.apk releases/SHIV-AI-MYRAA-v4.0-CleanInstall.apk
+
+      - name: Upload SHIV-AI-MYRAA CleanInstall APK (Recommended - Zero Conflict)
+        uses: actions/upload-artifact@v4
+        with:
+          name: SHIV-AI-MYRAA-v4.0-CleanInstall-APK
+          path: releases/SHIV-AI-MYRAA-v4.0-CleanInstall.apk
 
       - name: Upload SHIV-AI-MYRAA Debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: SHIV-AI-MYRAA-v3.0-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: SHIV-AI-MYRAA-v4.0-debug-apk
+          path: releases/SHIV-AI-MYRAA-v4.0-debug.apk
 
       - name: Upload SHIV-AI-MYRAA Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: SHIV-AI-MYRAA-v3.0-release-apk
-          path: app/build/outputs/apk/release/app-release.apk
+          name: SHIV-AI-MYRAA-v4.0-release-apk
+          path: releases/SHIV-AI-MYRAA-v4.0-release.apk
