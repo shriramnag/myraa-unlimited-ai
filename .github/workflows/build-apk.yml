@@ -37,15 +37,13 @@ jobs:
             "$SDKMANAGER" "platforms;android-35" "build-tools;35.0.0" "platform-tools"
           fi
 
-      - name: Install Dependencies & Build Web Assets
+      - name: Verify Pre-Bundled Android WebView Assets
         run: |
-          npm install --legacy-peer-deps || npm install
-          npm run build
-          rm -rf dist/assets/aistudio/*.zip || true
           mkdir -p app/src/main/assets/public
-          cp -r public/* app/src/main/assets/public/ || true
-          cp -r dist/* app/src/main/assets/public/
-          rm -rf app/src/main/assets/public/assets/aistudio/*.zip || true
+          if [ -d "public/avatars" ]; then cp -rn public/avatars app/src/main/assets/public/ || true; fi
+          if [ -d "public/characters" ]; then cp -rn public/characters app/src/main/assets/public/ || true; fi
+          rm -rf app/src/main/assets/public/assets/aistudio || true
+          ls -la app/src/main/assets/public/
 
       - name: Prepare Keystore & Gradle Config for Public Maven CI
         run: |
@@ -143,7 +141,13 @@ jobs:
               }
           }
 
+          configurations.all {
+              exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk7")
+              exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib-jdk8")
+          }
+
           dependencies {
+              implementation(platform("org.jetbrains.kotlin:kotlin-bom:1.8.22"))
               implementation("androidx.core:core-ktx:1.13.1")
               implementation("androidx.appcompat:appcompat:1.7.0")
               implementation("androidx.activity:activity:1.9.3")

@@ -6,14 +6,10 @@ echo "🔱 SHIV AI — MYRAA v3.0 (Owner: Shri Ram Nag)"
 echo "📦 Automated Android APK Builder"
 echo "=========================================================="
 
-if command -v npm >/dev/null 2>&1 && [ -d "node_modules" ]; then
-  echo "[1/3] Building Web Frontend Bundle (dist/)..."
-  npm run build
-  mkdir -p app/src/main/assets/public
-  cp -r dist/* app/src/main/assets/public/
-else
-  echo "[1/3] Using pre-bundled Web Assets in app/src/main/assets/public/..."
-fi
+echo "[1/3] Verifying pre-bundled Web Assets in app/src/main/assets/public/..."
+mkdir -p app/src/main/assets/public
+if [ -d "public/avatars" ]; then cp -rn public/avatars app/src/main/assets/public/ || true; fi
+if [ -d "public/characters" ]; then cp -rn public/characters app/src/main/assets/public/ || true; fi
 
 echo "[2/3] Ensuring signing keystore..."
 if [ ! -f debug.keystore ]; then
