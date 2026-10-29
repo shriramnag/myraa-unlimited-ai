@@ -61,6 +61,12 @@ android {
         abortOnError = false
         checkReleaseBuilds = false
     }
+
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
 }
 
 secrets {
