@@ -5,9 +5,12 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build-android-apk:
-    name: Build Signed Debug, Release & CleanInstall APK
+    name: Build & Publish Direct Download APK (v5.0 Google Live)
     runs-on: ubuntu-latest
 
     steps:
@@ -92,8 +95,8 @@ jobs:
                   applicationId = project.findProperty("customAppId")?.toString() ?: "ai.myraa.mobile"
                   minSdk = 24
                   targetSdk = 34
-                  versionCode = 400
-                  versionName = "4.0.0"
+                  versionCode = 500
+                  versionName = "5.0.0"
               }
 
               signingConfigs {
@@ -169,25 +172,61 @@ jobs:
         run: |
           gradle assembleDebug assembleRelease --no-daemon --stacktrace
           mkdir -p releases
-          cp app/build/outputs/apk/debug/app-debug.apk releases/SHIV-AI-MYRAA-v4.0-debug.apk
-          cp app/build/outputs/apk/release/app-release.apk releases/SHIV-AI-MYRAA-v4.0-release.apk
+          cp app/build/outputs/apk/debug/app-debug.apk releases/SHIV-AI-MYRAA-v5.0-debug.apk
+          cp app/build/outputs/apk/release/app-release.apk releases/SHIV-AI-MYRAA-v5.0-release.apk
           gradle assembleRelease -PcustomAppId=ai.myraa.omni --no-daemon --stacktrace
-          cp app/build/outputs/apk/release/app-release.apk releases/SHIV-AI-MYRAA-v4.0-CleanInstall.apk
+          cp app/build/outputs/apk/release/app-release.apk releases/SHIV-AI-MYRAA-v5.0-CleanInstall.apk
+          ls -lh releases/
 
-      - name: Upload SHIV-AI-MYRAA CleanInstall APK (Recommended - Zero Conflict)
+      - name: Publish Direct 1-Click APK Download to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v5.0-latest
+          name: "SHIV AI — MYRAA v5.0 (Google Live API + Native Voice + Direct APK)"
+          body: |
+            ## 📥 Direct 1-Click APK Download (No ZIP Extraction Needed!)
+            Supreme Owner: **Shri Ram Nag (श्री राम नाग)**
+
+            Neeche diye gaye button par click karke seedha `.apk` download aur install karein:
+            - 🚀 **[Download SHIV-AI-MYRAA-v5.0-CleanInstall.apk (Recommended — Zero Conflict)](https://github.com/${{ github.repository }}/releases/download/v5.0-latest/SHIV-AI-MYRAA-v5.0-CleanInstall.apk)**
+            - 📱 **[Download SHIV-AI-MYRAA-v5.0-release.apk (Standard Package)](https://github.com/${{ github.repository }}/releases/download/v5.0-latest/SHIV-AI-MYRAA-v5.0-release.apk)**
+            - 🛠️ **[Download SHIV-AI-MYRAA-v5.0-debug.apk (Debug Build)](https://github.com/${{ github.repository }}/releases/download/v5.0-latest/SHIV-AI-MYRAA-v5.0-debug.apk)**
+          files: |
+            releases/SHIV-AI-MYRAA-v5.0-CleanInstall.apk
+            releases/SHIV-AI-MYRAA-v5.0-release.apk
+            releases/SHIV-AI-MYRAA-v5.0-debug.apk
+          prerelease: false
+          make_latest: true
+
+      - name: Add Direct APK Download Buttons to Workflow Summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+          # 🚀 SHIV AI — MYRAA v5.0 Direct APK Downloads
+          **Supreme Owner:** Shri Ram Nag (श्री राम नाग)
+
+          👉 **Mobile par bina ZIP ke seedha `.apk` download karne ke liye neeche click karein:**
+
+          | APK Variant | Direct 1-Tap Download Link |
+          | :--- | :--- |
+          | **1. CleanInstall APK (Recommended - 100% Zero Conflict)** | [⬇️ **Download SHIV-AI-MYRAA-v5.0-CleanInstall.apk**](https://github.com/${{ github.repository }}/releases/download/v5.0-latest/SHIV-AI-MYRAA-v5.0-CleanInstall.apk) |
+          | **2. Release APK (Standard v5.0.0)** | [⬇️ **Download SHIV-AI-MYRAA-v5.0-release.apk**](https://github.com/${{ github.repository }}/releases/download/v5.0-latest/SHIV-AI-MYRAA-v5.0-release.apk) |
+          | **3. Debug APK** | [⬇️ **Download SHIV-AI-MYRAA-v5.0-debug.apk**](https://github.com/${{ github.repository }}/releases/download/v5.0-latest/SHIV-AI-MYRAA-v5.0-debug.apk) |
+          EOF
+
+      - name: Upload SHIV-AI-MYRAA CleanInstall APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: SHIV-AI-MYRAA-v4.0-CleanInstall-APK
-          path: releases/SHIV-AI-MYRAA-v4.0-CleanInstall.apk
+          name: SHIV-AI-MYRAA-v5.0-CleanInstall-APK
+          path: releases/SHIV-AI-MYRAA-v5.0-CleanInstall.apk
 
-      - name: Upload SHIV-AI-MYRAA Debug APK
+      - name: Upload SHIV-AI-MYRAA Release APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: SHIV-AI-MYRAA-v4.0-debug-apk
-          path: releases/SHIV-AI-MYRAA-v4.0-debug.apk
+          name: SHIV-AI-MYRAA-v5.0-release-apk
+          path: releases/SHIV-AI-MYRAA-v5.0-release.apk
 
-      - name: Upload SHIV-AI-MYRAA Release APK
+      - name: Upload SHIV-AI-MYRAA Debug APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: SHIV-AI-MYRAA-v4.0-release-apk
-          path: releases/SHIV-AI-MYRAA-v4.0-release.apk
+          name: SHIV-AI-MYRAA-v5.0-debug-apk
+          path: releases/SHIV-AI-MYRAA-v5.0-debug.apk

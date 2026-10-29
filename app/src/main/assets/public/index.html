@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>SHIV AI — MYRAA v4.0 OMNI-AGENT (Supreme Owner: Shri Ram Nag)</title>
+  <title>SHIV AI — MYRAA v5.0 GOOGLE LIVE & OMNI-CONTROLLER (Supreme Owner: Shri Ram Nag)</title>
   <style>
     :root {
       --bg-void: #03060C;
-      --bg-card: rgba(10, 17, 30, 0.88);
-      --border-glass: rgba(0, 240, 255, 0.26);
+      --bg-card: rgba(10, 17, 30, 0.90);
+      --border-glass: rgba(0, 240, 255, 0.28);
       --cyan: #00F0FF;
       --gold: #F59E0B;
       --emerald: #10B981;
@@ -38,7 +38,7 @@
     }
     .stage-vignette {
       position: absolute; inset: 0; pointer-events: none;
-      background: linear-gradient(180deg, rgba(3,6,12,0.82) 0%, rgba(3,6,12,0.12) 30%, rgba(3,6,12,0.25) 62%, rgba(3,6,12,0.96) 100%);
+      background: linear-gradient(180deg, rgba(3,6,12,0.84) 0%, rgba(3,6,12,0.12) 30%, rgba(3,6,12,0.25) 62%, rgba(3,6,12,0.96) 100%);
     }
     .scanline {
       position: absolute; inset: 0; pointer-events: none; opacity: 0.13;
@@ -62,18 +62,27 @@
       width: 9px; height: 9px; border-radius: 50%; background: var(--emerald);
       box-shadow: 0 0 10px var(--emerald);
     }
-    .brand-title { font-size: 12px; font-weight: 800; letter-spacing: 0.05em; color: var(--cyan); }
-    .brand-sub { font-size: 9.5px; color: var(--gold); font-weight: 700; }
-    .hud-actions { display: flex; gap: 5px; align-items: center; }
+    .pulse-dot.live {
+      background: var(--rose); box-shadow: 0 0 14px var(--rose);
+      animation: livePulse 1s infinite alternate;
+    }
+    @keyframes livePulse {
+      from { transform: scale(0.9); opacity: 0.7; }
+      to { transform: scale(1.35); opacity: 1; }
+    }
+    .brand-title { font-size: 11.5px; font-weight: 800; letter-spacing: 0.04em; color: var(--cyan); }
+    .brand-sub { font-size: 9px; color: var(--gold); font-weight: 700; }
+    .hud-actions { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
     .icon-btn {
       background: var(--bg-card); border: 1px solid var(--border-glass);
-      color: var(--text-main); padding: 6px 10px; border-radius: 10px;
-      font-size: 10.5px; font-weight: 700; cursor: pointer;
+      color: var(--text-main); padding: 6px 9px; border-radius: 10px;
+      font-size: 10px; font-weight: 800; cursor: pointer;
       display: inline-flex; align-items: center; gap: 4px; backdrop-filter: blur(12px);
     }
-    .icon-btn.fix-btn { border-color: rgba(16,185,129,0.55); color: var(--emerald); background: rgba(16,185,129,0.14); }
-    .icon-btn.gold-btn { border-color: rgba(245,158,11,0.55); color: var(--gold); background: rgba(245,158,11,0.14); }
-    .icon-btn.purple-btn { border-color: rgba(168,85,247,0.55); color: #D8B4FE; background: rgba(168,85,247,0.16); }
+    .icon-btn.fix-btn { border-color: rgba(16,185,129,0.6); color: var(--emerald); background: rgba(16,185,129,0.16); }
+    .icon-btn.gold-btn { border-color: rgba(245,158,11,0.6); color: var(--gold); background: rgba(245,158,11,0.16); }
+    .icon-btn.rose-btn { border-color: rgba(244,63,94,0.65); color: #FDA4AF; background: rgba(244,63,94,0.2); }
+    .icon-btn.purple-btn { border-color: rgba(168,85,247,0.6); color: #D8B4FE; background: rgba(168,85,247,0.18); }
 
     /* Character Selector Pills */
     .avatar-strip {
@@ -107,19 +116,25 @@
     .quick-launch-bar::-webkit-scrollbar { display: none; }
     .quick-pill {
       flex-shrink: 0; padding: 6px 11px; border-radius: 999px;
-      background: rgba(10, 17, 30, 0.86); border: 1px solid rgba(0, 240, 255, 0.3);
+      background: rgba(10, 17, 30, 0.88); border: 1px solid rgba(0, 240, 255, 0.34);
       color: var(--cyan); font-size: 10.5px; font-weight: 700; cursor: pointer;
       backdrop-filter: blur(10px);
     }
+    .quick-pill.live-pill {
+      border-color: var(--rose); color: #FDA4AF; background: rgba(244, 63, 94, 0.2);
+    }
+    .quick-pill.apk-pill {
+      border-color: var(--emerald); color: var(--emerald); background: rgba(16, 185, 129, 0.18);
+    }
     .speech-bubble {
       pointer-events: auto;
-      background: rgba(7, 12, 24, 0.9);
+      background: rgba(7, 12, 24, 0.92);
       border: 1px solid var(--border-glass);
       border-left: 3px solid var(--cyan);
       border-radius: 16px; padding: 11px 13px;
       backdrop-filter: blur(16px);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-      max-height: 165px; overflow-y: auto;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.65);
+      max-height: 175px; overflow-y: auto;
     }
     .speech-meta {
       display: flex; justify-content: space-between; align-items: center;
@@ -141,48 +156,60 @@
     .bottom-hud {
       position: relative; z-index: 10;
       padding: 8px 12px 12px;
-      background: linear-gradient(0deg, rgba(3,6,12,0.98) 0%, rgba(3,6,12,0.86) 100%);
-      border-top: 1px solid rgba(0,240,255,0.18);
+      background: linear-gradient(0deg, rgba(3,6,12,0.98) 0%, rgba(3,6,12,0.88) 100%);
+      border-top: 1px solid rgba(0,240,255,0.2);
       display: flex; flex-direction: column; gap: 7px;
     }
-    .chat-row { display: flex; gap: 7px; align-items: center; }
+    .chat-row { display: flex; gap: 6px; align-items: center; }
     .chat-input {
-      flex: 1; background: rgba(15, 23, 42, 0.92);
+      flex: 1; background: rgba(15, 23, 42, 0.94);
       border: 1px solid var(--border-glass); border-radius: 999px;
       padding: 10px 14px; color: #fff; font-size: 12.5px; outline: none;
     }
     .chat-input:focus { border-color: var(--cyan); }
-    .mic-btn, .send-btn {
-      width: 40px; height: 40px; border-radius: 50%; border: none;
+    .mic-btn, .live-btn, .send-btn {
+      height: 40px; border-radius: 999px; border: none;
       display: flex; align-items: center; justify-content: center;
-      cursor: pointer; font-weight: 800; font-size: 15px; flex-shrink: 0;
+      cursor: pointer; font-weight: 800; font-size: 13px; flex-shrink: 0;
     }
     .mic-btn {
-      background: rgba(244, 63, 94, 0.18); border: 1px solid var(--rose); color: var(--rose);
+      width: 42px;
+      background: rgba(244, 63, 94, 0.22); border: 1.5px solid var(--rose); color: #fff; font-size: 16px;
     }
     .mic-btn.listening {
-      background: var(--rose); color: #fff; box-shadow: 0 0 18px var(--rose);
+      background: var(--rose); color: #fff; box-shadow: 0 0 20px var(--rose);
+      animation: livePulse 0.8s infinite alternate;
+    }
+    .live-btn {
+      padding: 0 11px;
+      background: rgba(16, 185, 129, 0.18); border: 1px solid var(--emerald);
+      color: var(--emerald); font-size: 10.5px; gap: 4px;
+    }
+    .live-btn.active {
+      background: var(--rose); border-color: #fff; color: #fff;
+      box-shadow: 0 0 16px var(--rose);
     }
     .send-btn {
-      background: linear-gradient(135deg, #00F0FF, #0284C7); color: #03060C;
+      width: 40px;
+      background: linear-gradient(135deg, #00F0FF, #0284C7); color: #03060C; font-size: 15px;
     }
     .nav-tabs {
       display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px;
     }
     .nav-tab {
-      background: rgba(15, 23, 42, 0.88); border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.1);
       border-radius: 10px; padding: 7px 2px; text-align: center;
       color: var(--text-dim); font-size: 9.5px; font-weight: 800; cursor: pointer;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .nav-tab.active {
-      border-color: var(--cyan); color: var(--cyan); background: rgba(0,240,255,0.14);
+      border-color: var(--cyan); color: var(--cyan); background: rgba(0,240,255,0.15);
     }
 
     /* Modal System */
     .modal-overlay {
       position: fixed; inset: 0; z-index: 50;
-      background: rgba(2, 6, 14, 0.88); backdrop-filter: blur(16px);
+      background: rgba(2, 6, 14, 0.9); backdrop-filter: blur(16px);
       display: none; flex-direction: column; padding: 14px;
     }
     .modal-overlay.open { display: flex; }
@@ -191,27 +218,28 @@
       padding-bottom: 10px; border-bottom: 1px solid var(--border-glass);
       margin-bottom: 10px;
     }
-    .modal-title { font-size: 14px; font-weight: 800; color: var(--cyan); letter-spacing: 0.04em; }
+    .modal-title { font-size: 13.5px; font-weight: 800; color: var(--cyan); letter-spacing: 0.04em; }
     .close-btn {
-      background: rgba(244,63,94,0.16); border: 1px solid var(--rose);
+      background: rgba(244,63,94,0.18); border: 1px solid var(--rose);
       color: var(--rose); padding: 5px 11px; border-radius: 9px; font-size: 11px; font-weight: 700; cursor: pointer;
     }
-    .modal-body { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-bottom: 20px; }
+    .modal-body { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-bottom: 24px; }
     .card {
-      background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(56,189,248,0.22);
+      background: rgba(15, 23, 42, 0.92); border: 1px solid rgba(56,189,248,0.24);
       border-radius: 14px; padding: 12px;
     }
     .card-title {
       font-size: 11.5px; font-weight: 800; color: var(--gold);
       margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;
-      text-transform: uppercase; letter-spacing: 0.05em;
+      text-transform: uppercase; letter-spacing: 0.05em; gap: 6px;
     }
     .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; }
     .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
     .action-chip {
-      background: rgba(30, 41, 59, 0.88); border: 1px solid rgba(56,189,248,0.24);
+      background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(56,189,248,0.26);
       border-radius: 10px; padding: 9px 10px; color: #fff; font-size: 11px; font-weight: 700;
       text-align: left; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 4px;
+      text-decoration: none;
     }
     .action-chip:active { transform: scale(0.98); border-color: var(--cyan); }
     .badge {
@@ -220,6 +248,7 @@
     }
     .badge.ok { background: rgba(16,185,129,0.22); color: var(--emerald); }
     .badge.gold { background: rgba(245,158,11,0.22); color: var(--gold); }
+    .badge.rose { background: rgba(244,63,94,0.25); color: #FDA4AF; }
     .code-box {
       background: #020409; border: 1px solid rgba(0,240,255,0.25);
       border-radius: 10px; padding: 10px; color: #38BDF8;
@@ -228,7 +257,7 @@
       max-height: 230px; overflow-y: auto; user-select: text;
     }
     .trackpad {
-      height: 130px; border-radius: 12px;
+      height: 125px; border-radius: 12px;
       background: radial-gradient(circle at center, rgba(0,240,255,0.12) 0%, rgba(2,6,23,0.95) 100%);
       border: 1px dashed var(--cyan);
       display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -245,6 +274,19 @@
     }
     .search-result-title { font-size: 12px; font-weight: 800; color: #fff; margin-bottom: 3px; }
     .search-result-desc { font-size: 11px; color: var(--text-dim); line-height: 1.4; }
+    .live-orb {
+      width: 78px; height: 78px; border-radius: 50%;
+      margin: 6px auto;
+      background: radial-gradient(circle, #00F0FF 0%, #0284C7 55%, rgba(2,132,199,0.1) 100%);
+      box-shadow: 0 0 28px rgba(0,240,255,0.6);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; cursor: pointer; transition: all 0.25s ease;
+    }
+    .live-orb.active {
+      background: radial-gradient(circle, #F43F5E 0%, #BE123C 60%, rgba(244,63,94,0.15) 100%);
+      box-shadow: 0 0 36px rgba(244,63,94,0.85);
+      animation: livePulse 0.85s infinite alternate;
+    }
   </style>
 </head>
 <body>
@@ -260,15 +302,15 @@
     <div class="top-hud">
       <div class="brand-row">
         <div class="brand-badge">
-          <div class="pulse-dot"></div>
+          <div class="pulse-dot" id="hudPulseDot"></div>
           <div>
-            <div class="brand-title">SHIV AI • MYRAA v4.0 OMNI</div>
+            <div class="brand-title">SHIV AI • MYRAA v5.0 LIVE</div>
             <div class="brand-sub">Supreme Owner: Shri Ram Nag (श्री राम नाग)</div>
           </div>
         </div>
         <div class="hud-actions">
-          <button class="icon-btn gold-btn" onclick="openModal('searchModal')">🌐 OMNI SEARCH</button>
-          <button class="icon-btn purple-btn" onclick="openModal('codeModal')">💻 CODE AGENT</button>
+          <button class="icon-btn rose-btn" onclick="openModal('liveModal')">🎙️ GOOGLE LIVE</button>
+          <button class="icon-btn fix-btn" onclick="openModal('apkModal')">📥 APK DOWNLOAD</button>
           <button class="icon-btn" id="camModeBtn" onclick="toggleCameraView()">FULL</button>
         </div>
       </div>
@@ -280,15 +322,16 @@
     <!-- Center Speech & Quick Futuristic Bar -->
     <div class="center-hud">
       <div class="quick-launch-bar">
+        <button class="quick-pill live-pill" onclick="toggleHandsFreeLiveMode()" id="handsFreePill">🔴 Hands-Free Voice: OFF</button>
+        <button class="quick-pill apk-pill" onclick="openModal('apkModal')">📥 Direct APK Download</button>
+        <button class="quick-pill" onclick="openModal('liveModal')">🎙️ Google Live API + Vision</button>
         <button class="quick-pill" onclick="openModal('pcModal')">🖥️ PC Desktop Control</button>
         <button class="quick-pill" onclick="openModal('codeModal')">🐙 GitHub & Code Agent</button>
-        <button class="quick-pill" onclick="openModal('searchModal')">⚡ Free DeepSeek/GPT AI</button>
-        <button class="quick-pill" onclick="invokeNativeAction('DEVICE_TELEMETRY')">📱 Device Telemetry</button>
-        <button class="quick-pill" onclick="invokeNativeAction('OPEN_CAST_SETTINGS')">📺 Cast to PC/TV</button>
+        <button class="quick-pill" onclick="openModal('searchModal')">🌐 Omni-Search</button>
       </div>
       <div class="speech-bubble">
         <div class="speech-meta">
-          <span id="activeSpeakerLabel">MYRAA v4.0 • OMNI-CONTROLLER [100% FREE AI ACTIVE]</span>
+          <span id="activeSpeakerLabel">MYRAA v5.0 • GOOGLE LIVE & NATIVE VOICE READY</span>
           <span class="lipsync-bars" id="lipsyncBars">
             <span class="lipsync-bar"></span>
             <span class="lipsync-bar"></span>
@@ -297,28 +340,164 @@
             <span class="lipsync-bar"></span>
           </span>
         </div>
-        <div class="speech-text" id="speechText">Namaste Supreme Owner Shri Ram Nag ji! SHIV AI — MYRAA v4.0 Omni-Controller is ready:
-• 100% Free AI Brain (DeepSeek-R1, Qwen-Coder, GPT-4o-Mini)
-• GitHub Live Repo & Autonomous Code Agent
-• Multi-Engine Deep Web Search (Wiki, GitHub, Web, YouTube)
-• PC / Desktop Remote Controller + 52 Native Android Actions</div>
+        <div class="speech-text" id="speechText">Namaste Supreme Owner Shri Ram Nag ji! SHIV AI — MYRAA v5.0 Google Live Omni-Agent tayyar hai:
+• 🎙️ Native Android Mic + Hindi/English TTS + Hands-Free Voice Control
+• ⚡ Google Gemini Live API (WebSocket + Vision + Tool Calling) + 100% Free AI
+• 🗣️ Bol kar kuch bhi karvayein: "Flashlight on karo", "YouTube par bhajan chalao", "WhatsApp kholo", "PC lock karo", "Python code likho"
+• 📥 Upar "APK DOWNLOAD" button se seedha 1-click me APK download karein!</div>
       </div>
     </div>
 
     <!-- Bottom Controls & Navigation -->
     <div class="bottom-hud">
       <div class="chat-row">
-        <button class="mic-btn" id="micBtn" onclick="toggleVoiceInput()" title="Voice Command">🎙️</button>
-        <input type="text" id="chatInput" class="chat-input" placeholder="Ask Free AI, write code, search web, or control phone/PC..." onkeydown="if(event.key==='Enter')sendMessage()" />
+        <button class="mic-btn" id="micBtn" onclick="toggleVoiceInput()" title="Tap to Speak (Hindi/English)">🎙️</button>
+        <button class="live-btn" id="liveLoopBtn" onclick="toggleHandsFreeLiveMode()" title="Continuous Hands-Free Live Voice">LIVE</button>
+        <input type="text" id="chatInput" class="chat-input" placeholder="Bol kar ya likh kar kuch bhi karvayein (Phone, PC, Code, Search)..." onkeydown="if(event.key==='Enter')sendMessage()" />
         <button class="send-btn" onclick="sendMessage()">➤</button>
       </div>
       <div class="nav-tabs">
         <div class="nav-tab active" onclick="closeAllModals()">3D STAGE</div>
+        <div class="nav-tab" onclick="openModal('liveModal')">GOOGLE LIVE 🎙️</div>
         <div class="nav-tab" onclick="openModal('searchModal')">OMNI AI 🔍</div>
         <div class="nav-tab" onclick="openModal('codeModal')">GITHUB 💻</div>
         <div class="nav-tab" onclick="openModal('pcModal')">PC CTRL 🖥️</div>
-        <div class="nav-tab" onclick="openModal('actionsModal')">52 MOBILE 📱</div>
-        <div class="nav-tab" onclick="openModal('brainModal')">BRAIN 🧠</div>
+        <div class="nav-tab" onclick="openModal('actionsModal')">52 ACTIONS 📱</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 0: GOOGLE GEMINI LIVE API + NATIVE VOICE & VISION HUB -->
+  <div class="modal-overlay" id="liveModal">
+    <div class="modal-header">
+      <div class="modal-title">🎙️ GOOGLE GEMINI LIVE API & VOICE OMNI-CONTROL</div>
+      <button class="close-btn" onclick="closeAllModals()">CLOSE</button>
+    </div>
+    <div class="modal-body">
+      <div class="card" style="text-align:center;">
+        <div class="card-title">
+          <span>🔴 REAL-TIME VOICE & HANDS-FREE CONVERSATION</span>
+          <span class="badge ok" id="voiceEngineBadge">ANDROID NATIVE MIC READY</span>
+        </div>
+        <div class="live-orb" id="modalLiveOrb" onclick="toggleVoiceInput()">🎙️</div>
+        <div id="liveVoiceStatusText" style="font-size:12px; font-weight:700; color:var(--cyan); margin-top:4px;">
+          Tap the Glowing Mic Orb to speak in Hindi, Hinglish, or English
+        </div>
+        <div style="display:flex; gap:6px; justify-content:center; margin-top:10px; flex-wrap:wrap;">
+          <select id="voiceLangSelect" class="select-box" onchange="updateVoiceLang()">
+            <option value="hi-IN">🇮🇳 Hindi / Hinglish (hi-IN)</option>
+            <option value="en-IN">🇮🇳 English India (en-IN)</option>
+            <option value="en-US">🌐 English US (en-US)</option>
+          </select>
+          <button class="icon-btn rose-btn" id="modalHandsFreeBtn" onclick="toggleHandsFreeLiveMode()">🔴 HANDS-FREE LOOP: OFF</button>
+          <button class="icon-btn fix-btn" onclick="testNativeVoiceOutput()">🔊 TEST VOICE SPEAK</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>⚡ GOOGLE GEMINI MULTIMODAL LIVE API (WebSocket Bidi + Tool Calling)</span>
+          <span class="badge gold" id="geminiLiveStatusBadge">HYBRID FREE + LIVE</span>
+        </div>
+        <div style="font-size:11px; color:var(--text-dim); margin-bottom:8px; line-height:1.45;">
+          Works <b>100% Free without any key</b> using Built-in AI + Android Native Mic/TTS. Or enter your Google AI Studio Gemini API Key below to activate direct <b>Google Gemini Multimodal Live WebSocket (`BidiGenerateContent`) + Gemini Function Calling</b>:
+        </div>
+        <div style="display:flex; gap:6px; margin-bottom:8px;">
+          <input id="geminiApiKeyInput" type="password" class="chat-input" placeholder="Paste Google Gemini API Key (AIzaSy...) — Optional" />
+          <button class="icon-btn fix-btn" onclick="saveAndConnectGeminiLive()">SAVE & CONNECT</button>
+          <button class="icon-btn gold-btn" onclick="invokeNativeMethod('openOfficialApiPage')">GET KEY ↗</button>
+        </div>
+        <div id="geminiWsLog" class="code-box" style="max-height:95px; font-size:10.5px;">[GOOGLE LIVE ENGINE] Hybrid Mode Active:
+• Native Android SpeechRecognizer (hi-IN / en-IN) + Native Android TTS
+• 52 Android Hardware Actions + PC Remote + Code Agent connected to Voice Router
+• Enter a Gemini API Key above for direct wss://generativelanguage.googleapis.com BidiGenerateContent streaming.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>📷 GOOGLE LIVE VISION EYE (CAMERA + VOICE MULTIMODAL)</span>
+          <button class="icon-btn purple-btn" onclick="toggleLiveVisionCamera()" id="visionCamBtn">START CAMERA EYE</button>
+        </div>
+        <video id="liveVisionVideo" autoplay playsinline muted style="display:none; width:100%; max-height:170px; border-radius:10px; border:1px solid var(--cyan); object-fit:cover; margin-bottom:8px;"></video>
+        <canvas id="liveVisionCanvas" style="display:none;"></canvas>
+        <div style="display:flex; gap:6px;">
+          <button class="action-chip" style="flex:1;" onclick="analyzeLiveCameraFrame('Is photo me kya dikh raha hai? Hindi me batao.')">
+            <span>👁️ Ask What MYRAA Sees</span><span class="badge">VISION</span>
+          </button>
+          <button class="action-chip" style="flex:1;" onclick="invokeNativeAction('OPEN_CAMERA')">
+            <span>📸 Native Android Camera</span><span class="badge ok">APP</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🗣️ SPEAK ANY OF THESE VOICE COMMANDS (HINDI / ENGLISH)</div>
+        <div class="grid-2">
+          <button class="action-chip" onclick="processSpokenCommand('Flashlight chalu karo')"><span>"Flashlight chalu karo"</span><span class="badge">TORCH</span></button>
+          <button class="action-chip" onclick="processSpokenCommand('Flashlight band karo')"><span>"Flashlight band karo"</span><span class="badge">OFF</span></button>
+          <button class="action-chip" onclick="processSpokenCommand('YouTube par Arijit Singh songs chalao')"><span>"YouTube par song chalao"</span><span class="badge">YT</span></button>
+          <button class="action-chip" onclick="processSpokenCommand('WhatsApp kholo')"><span>"WhatsApp kholo"</span><span class="badge">APP</span></button>
+          <button class="action-chip" onclick="processSpokenCommand('Wi-Fi settings kholo')"><span>"Wi-Fi settings kholo"</span><span class="badge">WIFI</span></button>
+          <button class="action-chip" onclick="processSpokenCommand('Volume badhao')"><span>"Volume badhao"</span><span class="badge">VOL+</span></button>
+          <button class="action-chip" onclick="processSpokenCommand('Phone ki battery aur jankari batao')"><span>"Phone ki jankari batao"</span><span class="badge">INFO</span></button>
+          <button class="action-chip" onclick="processSpokenCommand('PC lock karo')"><span>"PC lock karo"</span><span class="badge">PC</span></button>
+          <button class="action-chip" onclick="processSpokenCommand('Python me calculator ka code likho')"><span>"Python code likho"</span><span class="badge">CODE</span></button>
+          <button class="action-chip" onclick="processSpokenCommand('Subah 6 baje ka alarm lagao')"><span>"6 baje ka alarm lagao"</span><span class="badge">ALARM</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL APK: DIRECT 1-CLICK APK DOWNLOAD HUB -->
+  <div class="modal-overlay" id="apkModal">
+    <div class="modal-header">
+      <div class="modal-title">📥 DIRECT 1-CLICK APK DOWNLOAD HUB (NO ZIP NEEDED)</div>
+      <button class="close-btn" onclick="closeAllModals()">CLOSE</button>
+    </div>
+    <div class="modal-body">
+      <div class="card">
+        <div class="card-title">
+          <span>🚀 DIRECT RAW .APK DOWNLOAD LINKS (GITHUB RELEASES)</span>
+          <span class="badge ok">1-TAP INSTALL</span>
+        </div>
+        <div style="font-size:11.5px; color:var(--text-dim); margin-bottom:10px; line-height:1.5;">
+          Ab GitHub Actions har build par apne aap <b>GitHub Releases</b> me sidha <code>.apk</code> file publish karta hai! Niche kisi bhi button par tap karke sidha <b>.APK</b> download karein (bina ZIP extract kiye):
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <a class="action-chip" style="border-color:var(--emerald); background:rgba(16,185,129,0.16);" href="https://github.com/shriramnag/myraa-unlimited-ai/releases/latest/download/SHIV-AI-MYRAA-v5.0-CleanInstall.apk" target="_blank">
+            <div>
+              <div style="font-size:12.5px; color:var(--emerald); font-weight:800;">⬇️ Download SHIV-AI-MYRAA-v5.0-CleanInstall.apk</div>
+              <div style="font-size:10.5px; color:var(--text-dim);">Recommended • Zero Package Conflict (ai.myraa.omni) • Installs on all phones</div>
+            </div>
+            <span class="badge ok">DIRECT .APK</span>
+          </a>
+
+          <a class="action-chip" href="https://github.com/shriramnag/myraa-unlimited-ai/releases/latest/download/SHIV-AI-MYRAA-v5.0-release.apk" target="_blank">
+            <div>
+              <div style="font-size:12px; color:var(--cyan); font-weight:800;">⬇️ Download SHIV-AI-MYRAA-v5.0-release.apk</div>
+              <div style="font-size:10.5px; color:var(--text-dim);">Standard Release Package (ai.myraa.mobile • v5.0.0)</div>
+            </div>
+            <span class="badge">DIRECT .APK</span>
+          </a>
+
+          <a class="action-chip" href="https://github.com/shriramnag/myraa-unlimited-ai/releases" target="_blank">
+            <div>
+              <div style="font-size:12px; color:var(--gold); font-weight:800;">📦 Open GitHub Releases Page (All APKs)</div>
+              <div style="font-size:10.5px; color:var(--text-dim);">github.com/shriramnag/myraa-unlimited-ai/releases</div>
+            </div>
+            <span class="badge gold">OPEN ↗</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">💡 GITHUB MOBILE PAR APK DOWNLOAD KAISE DIKHEGA?</div>
+        <div style="font-size:11.5px; color:var(--text-main); line-height:1.6;">
+          1. Upar <b>Settings (⚙️) → Push to GitHub</b> dabayein.<br/>
+          2. Apne phone ke browser me yeh link kholein:<br/>
+          <span style="color:var(--cyan); font-weight:700;">https://github.com/shriramnag/myraa-unlimited-ai/releases</span><br/>
+          3. Wahan <b>Assets</b> ke andar aapko sidha <b><code>SHIV-AI-MYRAA-v5.0-CleanInstall.apk</code></b> dikhega — uspe tap karte hi sidha APK download aur install ho jayega!
+        </div>
       </div>
     </div>
   </div>
@@ -404,7 +583,7 @@
           <button class="icon-btn purple-btn" onclick="generateAgentCode()">GENERATE</button>
         </div>
         <div id="generatedCodeBox" class="code-box">// SHIV AI Code Agent Ready (Supreme Owner: Shri Ram Nag)
-// Type any coding task above and tap GENERATE for instant production code.</div>
+// Type any coding task above or speak "Python me calculator ka code likho"</div>
         <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
           <button class="icon-btn fix-btn" onclick="copyTextFromId('generatedCodeBox')">📋 COPY CODE</button>
           <button class="icon-btn gold-btn" onclick="shareTextFromId('generatedCodeBox')">📤 SHARE FILE</button>
@@ -418,7 +597,7 @@
   <!-- MODAL 3: PC / DESKTOP REMOTE CONTROL CENTER -->
   <div class="modal-overlay" id="pcModal">
     <div class="modal-header">
-      <div class="modal-title">🖥️ PC / DESKTOP REMOTE CONTROLLER (WI-FI & ADB)</div>
+      <div class="modal-title">🖥️ PC / DESKTOP REMOTE CONTROLLER (WI-FI & VOICE)</div>
       <button class="close-btn" onclick="closeAllModals()">CLOSE</button>
     </div>
     <div class="modal-body">
@@ -432,7 +611,7 @@
           <button class="icon-btn fix-btn" onclick="connectPcAgent()">CONNECT PC</button>
         </div>
         <div style="font-size:11px; color:var(--text-dim);" id="pcStatusText">
-          Connects over Wi-Fi HTTP/WebSocket to your Windows/Linux/Mac PC running the free MYRAA PC Bridge script below.
+          Connects over Wi-Fi HTTP/WebSocket to your Windows/Linux/Mac PC running <code>myraa_pc_agent.py</code>.
         </div>
       </div>
 
@@ -468,90 +647,27 @@
           <button class="action-chip" onclick="invokeNativeAction('OPEN_DEVELOPER_OPTIONS')"><span>🛠️ Wireless ADB Debug</span><span class="badge ok">NATIVE</span></button>
         </div>
       </div>
-
-      <div class="card">
-        <div class="card-title">
-          <span>🐍 1-CLICK FREE PYTHON PC AGENT SERVER (myraa_pc_agent.py)</span>
-          <button class="icon-btn fix-btn" onclick="copyTextFromId('pcPythonScript')">COPY SCRIPT</button>
-        </div>
-        <div style="font-size:11px; color:var(--text-dim); margin-bottom:6px;">
-          Run this free Python script on your PC/Laptop (<code>pip install pyautogui && python myraa_pc_agent.py</code>) to control your PC from MYRAA over Wi-Fi:
-        </div>
-        <div id="pcPythonScript" class="code-box">#!/usr/bin/env python3
-# SHIV AI — MYRAA v4.0 PC Desktop Remote Bridge (Supreme Owner: Shri Ram Nag)
-from http.server import BaseHTTPRequestHandler, HTTPServer
-import json, os, webbrowser
-try:
-    import pyautogui
-    pyautogui.FAILSAFE = False
-except ImportError:
-    pyautogui = None
-
-class MyraaPcHandler(BaseHTTPRequestHandler):
-    def _headers(self):
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.end_headers()
-    def do_OPTIONS(self): self._headers()
-    def do_POST(self):
-        length = int(self.headers.get("Content-Length", 0))
-        data = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
-        cmd = data.get("cmd", "")
-        text = data.get("text", "")
-        if cmd == "MOUSE_MOVE" and pyautogui:
-            pyautogui.moveRel(data.get("dx", 0), data.get("dy", 0))
-        elif cmd == "MOUSE_LEFT_CLICK" and pyautogui: pyautogui.click()
-        elif cmd == "MOUSE_RIGHT_CLICK" and pyautogui: pyautogui.rightClick()
-        elif cmd == "KEY_ENTER" and pyautogui: pyautogui.press("enter")
-        elif cmd == "TYPE_TEXT" and pyautogui: pyautogui.write(text, interval=0.02)
-        elif cmd == "PC_VOL_UP" and pyautogui: pyautogui.press("volumeup")
-        elif cmd == "PC_VOL_DOWN" and pyautogui: pyautogui.press("volumedown")
-        elif cmd == "PC_ALT_TAB" and pyautogui: pyautogui.hotkey("alt", "tab")
-        elif cmd == "PC_SHOW_DESKTOP" and pyautogui: pyautogui.hotkey("win", "d")
-        elif cmd == "PC_OPEN_BROWSER": webbrowser.open("https://github.com/shriramnag/myraa-unlimited-ai")
-        elif cmd == "PC_OPEN_VSCODE": os.system("code .")
-        elif cmd == "PC_LOCK": os.system("rundll32.exe user32.dll,LockWorkStation || loginctl lock-session")
-        self._headers()
-        self.wfile.write(json.dumps({"ok": True, "executed": cmd}).encode())
-
-print("SHIV AI MYRAA PC Bridge listening on port 8765...")
-HTTPServer(("0.0.0.0", 8765), MyraaPcHandler).serve_forever()</div>
-      </div>
     </div>
   </div>
 
-  <!-- MODAL 4: 52 Native Android Actions -->
+  <!-- MODAL 4: 52 Native Android Actions + Brain & Vault -->
   <div class="modal-overlay" id="actionsModal">
     <div class="modal-header">
-      <div class="modal-title">📱 ANDROID NATIVE BRIDGE (52 HARDWARE & OS ACTIONS)</div>
+      <div class="modal-title">📱 52 ANDROID NATIVE ACTIONS & BRAIN VAULT (1977)</div>
       <button class="close-btn" onclick="closeAllModals()">CLOSE</button>
     </div>
     <div class="modal-body">
       <div class="card">
         <div class="card-title">
-          <span>QUICK HARDWARE, SETTINGS & AUTOMATION</span>
+          <span>QUICK HARDWARE, SETTINGS & VOICE AUTOMATION</span>
           <span class="badge ok">52 ACTIVE</span>
         </div>
         <input id="actionFilterInput" class="chat-input" style="width:100%; margin-bottom:8px;" placeholder="Filter 52 Android actions (e.g. flashlight, wifi, cast, whatsapp)..." oninput="renderActions()" />
         <div class="grid-2" id="nativeActionsGrid"></div>
       </div>
-      <div class="card">
-        <div class="card-title">BRIDGE AUDIT LOG (MyraaNativePlugin.java)</div>
-        <div id="auditLogList" style="font-size:11px; color:var(--text-dim); line-height:1.5;"></div>
-      </div>
-    </div>
-  </div>
 
-  <!-- MODAL 5: Brain Database & Admin Vault -->
-  <div class="modal-overlay" id="brainModal">
-    <div class="modal-header">
-      <div class="modal-title">🧠 BRAIN DATABASE & SUPREME OWNER VAULT (1977)</div>
-      <button class="close-btn" onclick="closeAllModals()">CLOSE</button>
-    </div>
-    <div class="modal-body">
       <div class="card">
-        <div class="card-title">ADD PERMANENT MEMORY (MyraaBrainDatabase_ShriRamNag)</div>
+        <div class="card-title">🧠 PERMANENT BRAIN DATABASE (MyraaBrainDatabase_ShriRamNag)</div>
         <div style="display:flex; gap:6px;">
           <input id="memoryInput" class="chat-input" placeholder="Store permanent fact, command, or preference..." />
           <button class="icon-btn fix-btn" onclick="addBrainMemory()">SAVE</button>
@@ -571,15 +687,15 @@ HTTPServer(("0.0.0.0", 8765), MyraaPcHandler).serve_forever()</div>
       </div>
 
       <div class="card">
-        <div class="card-title">11 SHIV-AI-CORE AUTONOMOUS MODULES</div>
-        <div id="coreToolsBody" style="display:flex; flex-direction:column; gap:6px;"></div>
+        <div class="card-title">BRIDGE AUDIT LOG (MyraaNativePlugin.java)</div>
+        <div id="auditLogList" style="font-size:11px; color:var(--text-dim); line-height:1.5;"></div>
       </div>
     </div>
   </div>
 
   <script>
     const AVATARS = [
-      { id: "myraa", name: "MYRAA", role: "Omni Companion", img: "./avatars/myraa.png", fullVideo: "./avatars/videos/myraa_full.mp4", closeupVideo: "./avatars/videos/myraa_closeup.mp4", poster: "./avatars/myraa_full.png" },
+      { id: "myraa", name: "MYRAA", role: "Google Live Companion", img: "./avatars/myraa.png", fullVideo: "./avatars/videos/myraa_full.mp4", closeupVideo: "./avatars/videos/myraa_closeup.mp4", poster: "./avatars/myraa_full.png" },
       { id: "codex", name: "CODEX", role: "GitHub & Code Agent", img: "./avatars/codex.png", fullVideo: "./avatars/videos/codex_full.mp4", closeupVideo: "./avatars/videos/codex_closeup.mp4", poster: "./avatars/codex_full.png" },
       { id: "aura", name: "AURA", role: "Creative Synth", img: "./avatars/aura.png", fullVideo: "./avatars/videos/aura_full.mp4", closeupVideo: "./avatars/videos/aura_closeup.mp4", poster: "./avatars/aura_full.png" },
       { id: "sentinel", name: "SENTINEL", role: "PC & Mobile Shield", img: "./avatars/sentinel.png", fullVideo: "./avatars/videos/sentinel_full.mp4", closeupVideo: "./avatars/videos/sentinel_closeup.mp4", poster: "./avatars/sentinel.png" },
@@ -604,25 +720,42 @@ HTTPServer(("0.0.0.0", 8765), MyraaPcHandler).serve_forever()</div>
       "OPEN_APP", "CLOSE_MYRAA", "CANCEL_PENDING_ACTION"
     ];
 
-    const CORE_TOOLS = [
-      { name: "free_ai_omni_router", desc: "Zero-key 100% Free DeepSeek-R1, Qwen-Coder & GPT-4o-Mini inference" },
-      { name: "github_code_agent", desc: "Live GitHub API repo inspector, workflow checker & polyglot code generator" },
-      { name: "pc_desktop_controller", desc: "Wi-Fi LAN mouse, keyboard, power, and terminal control for Windows/Linux/Mac" },
-      { name: "multi_engine_omni_search", desc: "Wikipedia, GitHub, Google Web & YouTube unified research engine" },
-      { name: "device_control_52", desc: "Direct Android hardware control for Torch, Cast, Wireless ADB, Volume & Intents" },
-      { name: "memory_vault", desc: "Permanent local knowledge graph in MyraaBrainDatabase_ShriRamNag" },
-      { name: "security_audit_shield", desc: "OTP/Payment/Banking hardware-level privacy shield" }
-    ];
-
     let currentAvatar = AVATARS[0];
     let isCloseup = false;
-    let auditLogs = ["[READY] SHIV AI — MYRAA v4.0 initialized with 52 Android Actions, Free AI Router, GitHub Agent & PC Bridge."];
+    let isListening = false;
+    let handsFreeLiveMode = false;
+    let selectedVoiceLang = localStorage.getItem("MyraaVoiceLang") || "hi-IN";
+    let geminiLiveSocket = null;
+    let liveVisionStream = null;
+
+    let auditLogs = ["[READY] SHIV AI — MYRAA v5.0 initialized with Google Live API, Native Android SpeechRecognizer & 52 Actions."];
     let brainMemories = JSON.parse(localStorage.getItem("MyraaBrainDatabase_ShriRamNag") || JSON.stringify([
       "Supreme Owner & Nirman Karta: Shri Ram Nag (श्री राम नाग)",
-      "Primary AI Core: SHIV AI — MYRAA v4.0 Omni-Controller",
-      "GitHub Repository: shriramnag/myraa-unlimited-ai (APK Build Passing ✓)",
+      "Primary AI Core: SHIV AI — MYRAA v5.0 Google Live Omni-Controller",
+      "GitHub Repository: shriramnag/myraa-unlimited-ai (Direct Release APK Enabled ✓)",
       "Security Policy: OTP, Banking & Password fields strictly shielded"
     ]));
+
+    // Initialize saved Gemini API key from Android SharedPreferences or localStorage
+    function initGeminiKey() {
+      let savedKey = localStorage.getItem("MyraaGeminiApiKey") || "";
+      if (!savedKey && window.MyraaNativeBridge && typeof window.MyraaNativeBridge.getSavedGeminiKey === "function") {
+        try {
+          savedKey = window.MyraaNativeBridge.getSavedGeminiKey() || "";
+        } catch (e) {}
+      }
+      if (savedKey) {
+        document.getElementById("geminiApiKeyInput").value = savedKey;
+        connectGeminiLiveWebSocket(savedKey);
+      }
+      document.getElementById("voiceLangSelect").value = selectedVoiceLang;
+    }
+
+    function updateVoiceLang() {
+      selectedVoiceLang = document.getElementById("voiceLangSelect").value;
+      localStorage.setItem("MyraaVoiceLang", selectedVoiceLang);
+      speakResponse(selectedVoiceLang.startsWith("hi") ? "Hindi aur Hinglish voice mode chalu ho gaya hai." : "English voice recognition activated.");
+    }
 
     function renderAvatars() {
       const strip = document.getElementById("avatarStrip");
@@ -654,6 +787,20 @@ HTTPServer(("0.0.0.0", 8765), MyraaPcHandler).serve_forever()</div>
       video.play().catch(() => {});
     }
 
+    function invokeNativeMethod(methodName, payloadObj = {}) {
+      if (window.MyraaNativeBridge && typeof window.MyraaNativeBridge.invoke === "function") {
+        try {
+          return JSON.parse(window.MyraaNativeBridge.invoke(methodName, JSON.stringify(payloadObj)) || "{}");
+        } catch (e) {
+          return { status: "error", error: e.message };
+        }
+      }
+      if (methodName === "openOfficialApiPage") {
+        window.open("https://aistudio.google.com/app/apikey", "_blank");
+      }
+      return { ok: true };
+    }
+
     function invokeNativeAction(actionName, extra = {}) {
       let msg = `Executed ${actionName}`;
       if (window.MyraaNativeBridge && typeof window.MyraaNativeBridge.invoke === "function") {
@@ -672,6 +819,7 @@ HTTPServer(("0.0.0.0", 8765), MyraaPcHandler).serve_forever()</div>
       auditLogs.unshift(`[${new Date().toLocaleTimeString()}] ${actionName} -> ${msg}`);
       renderAuditLogs();
       speakResponse(msg);
+      return msg;
     }
 
     function renderActions() {
@@ -692,21 +840,9 @@ HTTPServer(("0.0.0.0", 8765), MyraaPcHandler).serve_forever()</div>
       if (el) el.innerHTML = auditLogs.slice(0, 14).map(l => `<div>• ${l}</div>`).join("");
     }
 
-    function renderCoreTools() {
-      const body = document.getElementById("coreToolsBody");
-      body.innerHTML = CORE_TOOLS.map(t => `
-        <div style="padding:8px 10px; background:rgba(30,41,59,0.75); border-radius:10px; display:flex; justify-content:space-between; align-items:center;">
-          <div>
-            <div style="font-size:11.5px; font-weight:800; color:var(--gold);">${t.name}</div>
-            <div style="font-size:10.5px; color:var(--text-dim);">${t.desc}</div>
-          </div>
-          <span class="badge ok">ACTIVE</span>
-        </div>
-      `).join("");
-    }
-
     function renderBrainMemories() {
       const list = document.getElementById("brainMemoriesList");
+      if (!list) return;
       list.innerHTML = brainMemories.map((m, idx) => `
         <div style="padding:8px 10px; background:rgba(30,41,59,0.75); border-radius:10px; font-size:11.5px; display:flex; justify-content:space-between;">
           <span>🧠 ${m}</span>
@@ -723,7 +859,7 @@ HTTPServer(("0.0.0.0", 8765), MyraaPcHandler).serve_forever()</div>
       localStorage.setItem("MyraaBrainDatabase_ShriRamNag", JSON.stringify(brainMemories));
       input.value = "";
       renderBrainMemories();
-      speakResponse(`Saved to permanent Brain Database: "${val}"`);
+      speakResponse(`Permanent Brain Database me save ho gaya: "${val}"`);
     }
 
     function unlockVault() {
@@ -737,15 +873,592 @@ HTTPServer(("0.0.0.0", 8765), MyraaPcHandler).serve_forever()</div>
       }
     }
 
-    // 100% Free AI & Multi-Engine Omni-Search
-    async function queryFreeAiBrain(promptText, model = "openai") {
-      const sys = "You are SHIV AI — MYRAA v4.0 Omni-Agent, created by Supreme Owner Shri Ram Nag. Reply concisely and helpfully in Hinglish/Hindi or English as asked.";
-      const url = `https://text.pollinations.ai/${encodeURIComponent(promptText)}?model=${encodeURIComponent(model)}&system=${encodeURIComponent(sys)}`;
+    // ============================================================================
+    // GOOGLE GEMINI MULTIMODAL LIVE API (WebSocket BidiGenerateContent + REST + Free AI)
+    // ============================================================================
+    function logGeminiWs(msg) {
+      const box = document.getElementById("geminiWsLog");
+      if (box) {
+        box.textContent = `[${new Date().toLocaleTimeString()}] ${msg}\n` + box.textContent;
+      }
+    }
+
+    function saveAndConnectGeminiLive() {
+      const key = document.getElementById("geminiApiKeyInput").value.trim();
+      if (!key) {
+        localStorage.removeItem("MyraaGeminiApiKey");
+        if (window.MyraaNativeBridge && window.MyraaNativeBridge.saveGeminiKey) {
+          window.MyraaNativeBridge.saveGeminiKey("");
+        }
+        document.getElementById("geminiLiveStatusBadge").textContent = "100% FREE AI MODE";
+        speakResponse("Switched to 100% Free Unlimited AI Mode with Native Android Voice.");
+        return;
+      }
+      localStorage.setItem("MyraaGeminiApiKey", key);
+      if (window.MyraaNativeBridge && window.MyraaNativeBridge.saveGeminiKey) {
+        window.MyraaNativeBridge.saveGeminiKey(key);
+      }
+      invokeNativeMethod("testAndSaveGeminiKey", { apiKey: key });
+      connectGeminiLiveWebSocket(key);
+    }
+
+    function connectGeminiLiveWebSocket(apiKey) {
+      if (!apiKey) return;
+      try {
+        if (geminiLiveSocket) {
+          geminiLiveSocket.close();
+        }
+        const wsUrl = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${encodeURIComponent(apiKey)}`;
+        logGeminiWs("Connecting to Google Gemini Multimodal Live WebSocket...");
+        geminiLiveSocket = new WebSocket(wsUrl);
+
+        geminiLiveSocket.onopen = () => {
+          document.getElementById("geminiLiveStatusBadge").textContent = "GOOGLE LIVE CONNECTED";
+          document.getElementById("geminiLiveStatusBadge").className = "badge ok";
+          logGeminiWs("✓ Connected to Google Live API (BidiGenerateContent)!");
+          const setupPayload = {
+            setup: {
+              model: "models/gemini-2.0-flash-exp",
+              generationConfig: {
+                responseModalities: ["TEXT"]
+              },
+              systemInstruction: {
+                parts: [{
+                  text: "You are SHIV AI — MYRAA v5.0, the personal AI Omni-Agent created by Supreme Owner Shri Ram Nag (श्री राम नाग). Reply helpfully in natural Hinglish/Hindi or English."
+                }]
+              }
+            }
+          };
+          geminiLiveSocket.send(JSON.stringify(setupPayload));
+        };
+
+        geminiLiveSocket.onmessage = async (event) => {
+          try {
+            let rawText = event.data;
+            if (rawText instanceof Blob) {
+              rawText = await rawText.text();
+            }
+            const data = JSON.parse(rawText);
+            const parts = data?.serverContent?.modelTurn?.parts;
+            if (parts && parts.length > 0) {
+              const textChunk = parts.map(p => p.text || "").join("");
+              if (textChunk.trim()) {
+                logGeminiWs(`Gemini Live: ${textChunk}`);
+                speakResponse(textChunk);
+              }
+            }
+          } catch (e) {}
+        };
+
+        geminiLiveSocket.onerror = () => {
+          logGeminiWs("WebSocket notice: Using Gemini REST + Free AI Router fallback.");
+        };
+
+        geminiLiveSocket.onclose = () => {
+          logGeminiWs("Google Live WebSocket standby.");
+        };
+      } catch (err) {
+        logGeminiWs("Live connection error: " + err.message);
+      }
+    }
+
+    async function queryGeminiOrFreeAi(promptText, model = "openai") {
+      const apiKey = (document.getElementById("geminiApiKeyInput")?.value || localStorage.getItem("MyraaGeminiApiKey") || "").trim();
+      const sysPrompt = "You are SHIV AI — MYRAA v5.0 Google Live Omni-Agent, created by Supreme Owner Shri Ram Nag (श्री राम नाग). Keep answers concise, natural, and spoken-friendly in Hinglish/Hindi or English.";
+
+      // 1. If Gemini Live WebSocket is open, also send clientContent turn
+      if (apiKey) {
+        try {
+          const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
+          const res = await fetch(geminiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              systemInstruction: { parts: [{ text: sysPrompt }] },
+              contents: [{ role: "user", parts: [{ text: promptText }] }]
+            })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (reply) return reply;
+          }
+        } catch (e) {}
+      }
+
+      // 2. 100% Free Unlimited AI Brain (Zero Key Required)
+      const url = `https://text.pollinations.ai/${encodeURIComponent(promptText)}?model=${encodeURIComponent(model)}&system=${encodeURIComponent(sysPrompt)}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error("Free AI endpoint busy");
       return await res.text();
     }
 
+    // ============================================================================
+    // GOOGLE LIVE VISION CAMERA EYE (Multimodal Image + Voice Analysis)
+    // ============================================================================
+    async function toggleLiveVisionCamera() {
+      const video = document.getElementById("liveVisionVideo");
+      const btn = document.getElementById("visionCamBtn");
+      if (liveVisionStream) {
+        liveVisionStream.getTracks().forEach(t => t.stop());
+        liveVisionStream = null;
+        video.style.display = "none";
+        btn.textContent = "START CAMERA EYE";
+        return;
+      }
+      try {
+        liveVisionStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" },
+          audio: false
+        });
+        video.srcObject = liveVisionStream;
+        video.style.display = "block";
+        btn.textContent = "STOP CAMERA EYE";
+        speakResponse("Google Live Vision Camera chalu ho gaya hai.");
+      } catch (e) {
+        invokeNativeAction("OPEN_CAMERA");
+      }
+    }
+
+    async function analyzeLiveCameraFrame(question) {
+      const video = document.getElementById("liveVisionVideo");
+      const canvas = document.getElementById("liveVisionCanvas");
+      const apiKey = (document.getElementById("geminiApiKeyInput")?.value || localStorage.getItem("MyraaGeminiApiKey") || "").trim();
+
+      if (liveVisionStream && video.videoWidth > 0 && apiKey) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext("2d").drawImage(video, 0, 0);
+        const base64Jpeg = canvas.toDataURL("image/jpeg", 0.75).split(",")[1];
+        try {
+          speakResponse("Live camera frame analyze kiya ja raha hai...");
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{
+                parts: [
+                  { text: question },
+                  { inlineData: { mimeType: "image/jpeg", data: base64Jpeg } }
+                ]
+              }]
+            })
+          });
+          const data = await res.json();
+          const ans = data?.candidates?.[0]?.content?.parts?.[0]?.text || "Frame analyzed.";
+          speakResponse(ans);
+          return;
+        } catch (err) {}
+      }
+      const fallback = await queryGeminiOrFreeAi(question);
+      speakResponse(fallback);
+    }
+
+    // ============================================================================
+    // NATIVE ANDROID MICROPHONE + WEB SPEECH RECOGNITION + HANDS-FREE LIVE LOOP
+    // ============================================================================
+    function setMicUiState(listening, statusMessage) {
+      isListening = listening;
+      const micBtn = document.getElementById("micBtn");
+      const orb = document.getElementById("modalLiveOrb");
+      const dot = document.getElementById("hudPulseDot");
+      const statusEl = document.getElementById("liveVoiceStatusText");
+
+      if (listening) {
+        micBtn.classList.add("listening");
+        if (orb) orb.classList.add("active");
+        if (dot) dot.classList.add("live");
+        document.getElementById("activeSpeakerLabel").textContent = `${currentAvatar.name} • 🎙️ LISTENING LIVE (${selectedVoiceLang})...`;
+      } else {
+        micBtn.classList.remove("listening");
+        if (orb) orb.classList.remove("active");
+        if (!handsFreeLiveMode && dot) dot.classList.remove("live");
+      }
+      if (statusMessage && statusEl) {
+        statusEl.textContent = statusMessage;
+      }
+    }
+
+    // Callback invoked directly by Android BridgeActivity.java SpeechRecognizer / RecognizerIntent
+    window.onNativeVoiceEvent = function(type, text, isFinal) {
+      if (type === "listening") {
+        setMicUiState(true, "🎙️ Speak now in Hindi, Hinglish, or English...");
+      } else if (type === "partial") {
+        document.getElementById("chatInput").value = text;
+        document.getElementById("liveVoiceStatusText").textContent = `🗣️ Hearing: "${text}"`;
+      } else if (type === "result") {
+        setMicUiState(false, `✓ Heard: "${text}"`);
+        document.getElementById("chatInput").value = text;
+        processSpokenCommand(text);
+      } else if (type === "permission_granted") {
+        setMicUiState(false, "✓ Microphone Permission Granted! Tap Mic to speak.");
+        speakResponse("Microphone permission mil gayi hai. Ab aap bol kar sab kuch control kar sakte hain.");
+      } else if (type === "status") {
+        setMicUiState(false, text);
+      } else if (type === "error") {
+        setMicUiState(false, text);
+        if (handsFreeLiveMode) {
+          setTimeout(() => { if (handsFreeLiveMode && !isListening) startVoiceCapture(); }, 2500);
+        }
+      }
+    };
+
+    function toggleHandsFreeLiveMode() {
+      handsFreeLiveMode = !handsFreeLiveMode;
+      const pill = document.getElementById("handsFreePill");
+      const liveBtn = document.getElementById("liveLoopBtn");
+      const modalBtn = document.getElementById("modalHandsFreeBtn");
+      const dot = document.getElementById("hudPulseDot");
+
+      if (handsFreeLiveMode) {
+        pill.textContent = "🔴 Hands-Free Voice: ON";
+        liveBtn.classList.add("active");
+        if (modalBtn) modalBtn.textContent = "🔴 HANDS-FREE LOOP: ON";
+        if (dot) dot.classList.add("live");
+        startVoiceCapture();
+      } else {
+        pill.textContent = "🔴 Hands-Free Voice: OFF";
+        liveBtn.classList.remove("active");
+        if (modalBtn) modalBtn.textContent = "🔴 HANDS-FREE LOOP: OFF";
+        if (dot) dot.classList.remove("live");
+        stopVoiceCapture();
+      }
+    }
+
+    function toggleVoiceInput() {
+      if (isListening) {
+        stopVoiceCapture();
+      } else {
+        startVoiceCapture();
+      }
+    }
+
+    function startVoiceCapture() {
+      // 1. Prefer Real Android Native SpeechRecognizer in BridgeActivity.java
+      if (window.MyraaNativeBridge && typeof window.MyraaNativeBridge.startNativeVoice === "function") {
+        setMicUiState(true, "🎙️ Native Android Microphone Listening...");
+        window.MyraaNativeBridge.startNativeVoice(selectedVoiceLang);
+        return;
+      }
+
+      // 2. Browser / WebView SpeechRecognition Fallback
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRec) {
+        try {
+          const rec = new SpeechRec();
+          rec.lang = selectedVoiceLang;
+          rec.interimResults = true;
+          setMicUiState(true, "🎙️ Web Speech Microphone Listening...");
+          rec.onresult = (e) => {
+            const transcript = Array.from(e.results).map(r => r[0].transcript).join("");
+            document.getElementById("chatInput").value = transcript;
+            if (e.results[0].isFinal) {
+              setMicUiState(false, `✓ Heard: "${transcript}"`);
+              processSpokenCommand(transcript);
+            }
+          };
+          rec.onerror = (err) => {
+            setMicUiState(false, "Voice notice: " + (err.error || "Check mic permission"));
+          };
+          rec.onend = () => {
+            if (isListening) setMicUiState(false);
+          };
+          rec.start();
+          return;
+        } catch (err) {}
+      }
+
+      setMicUiState(false, "Tap inside the input box or use Android APK for Native Voice.");
+    }
+
+    function stopVoiceCapture() {
+      setMicUiState(false, "Voice mic paused.");
+      if (window.MyraaNativeBridge && typeof window.MyraaNativeBridge.stopNativeVoice === "function") {
+        try { window.MyraaNativeBridge.stopNativeVoice(); } catch (e) {}
+      }
+    }
+
+    function testNativeVoiceOutput() {
+      speakResponse("Namaste Supreme Owner Shri Ram Nag ji! Mera microphone aur Google Live voice engine bilkul sahi kaam kar raha hai. Aap bol kar mobile aur PC dono control kar sakte hain.");
+    }
+
+    // ============================================================================
+    // UNIVERSAL HINDI / HINGLISH / ENGLISH VOICE COMMAND OMNI-ROUTER
+    // ============================================================================
+    function processSpokenCommand(spokenText) {
+      if (!spokenText || !spokenText.trim()) return;
+      document.getElementById("chatInput").value = spokenText.trim();
+      sendMessage();
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById("chatInput");
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = "";
+      const lower = text.toLowerCase();
+
+      // 1. Flashlight / Torch
+      if ((lower.includes("flashlight") || lower.includes("torch") || lower.includes("light")) &&
+          (lower.includes("on") || lower.includes("chalu") || lower.includes("jala") || lower.includes("start"))) {
+        invokeNativeAction("FLASHLIGHT_ON");
+        return;
+      }
+      if ((lower.includes("flashlight") || lower.includes("torch") || lower.includes("light")) &&
+          (lower.includes("off") || lower.includes("band") || lower.includes("bujha") || lower.includes("stop"))) {
+        invokeNativeAction("FLASHLIGHT_OFF");
+        return;
+      }
+
+      // 2. Camera & Gallery
+      if (lower.includes("camera") || lower.includes("photo khicho") || lower.includes("selfie")) {
+        invokeNativeAction("OPEN_CAMERA");
+        return;
+      }
+      if (lower.includes("gallery") || lower.includes("photos dikhao")) {
+        invokeNativeAction("OPEN_GALLERY");
+        return;
+      }
+
+      // 3. YouTube Voice Search & Play
+      if (lower.includes("youtube")) {
+        const cleanQuery = text.replace(/youtube|par|pe|mein|me|chalao|kholo|search|karo|play|on/gi, "").trim() || "Trending music";
+        invokeNativeAction("YOUTUBE_SEARCH", { query: cleanQuery });
+        return;
+      }
+
+      // 4. WhatsApp Voice Control
+      if (lower.includes("whatsapp")) {
+        const msgPart = text.replace(/whatsapp|par|pe|kholo|open|karo|message|bhejo|send/gi, "").trim();
+        if (msgPart.length > 2) {
+          invokeNativeAction("SEND_WHATSAPP_MESSAGE", { message: msgPart });
+        } else {
+          invokeNativeAction("OPEN_APP", { packageName: "com.whatsapp", target: "WhatsApp" });
+        }
+        return;
+      }
+
+      // 5. Wi-Fi, Bluetooth, Hotspot, Cast, VPN, Developer Options, Settings
+      if (lower.includes("wifi") || lower.includes("wi-fi")) {
+        invokeNativeAction("OPEN_WIFI_SETTINGS");
+        return;
+      }
+      if (lower.includes("bluetooth")) {
+        invokeNativeAction("OPEN_BLUETOOTH_SETTINGS");
+        return;
+      }
+      if (lower.includes("hotspot")) {
+        invokeNativeAction("OPEN_HOTSPOT_SETTINGS");
+        return;
+      }
+      if (lower.includes("cast") || lower.includes("screen mirror")) {
+        invokeNativeAction("OPEN_CAST_SETTINGS");
+        return;
+      }
+      if (lower.includes("developer") || lower.includes("adb")) {
+        invokeNativeAction("OPEN_DEVELOPER_OPTIONS");
+        return;
+      }
+      if (lower.includes("vpn")) {
+        invokeNativeAction("OPEN_VPN_SETTINGS");
+        return;
+      }
+      if (lower.includes("sound setting") || lower.includes("ringtone")) {
+        invokeNativeAction("OPEN_SOUND_SETTINGS");
+        return;
+      }
+      if (lower.includes("setting") && (lower.includes("kholo") || lower.includes("open"))) {
+        invokeNativeAction("OPEN_SETTINGS");
+        return;
+      }
+
+      // 6. Volume & Media Playback Control by Voice
+      if ((lower.includes("volume") || lower.includes("awaaz") || lower.includes("awaz")) &&
+          (lower.includes("badhao") || lower.includes("up") || lower.includes("tez") || lower.includes("full") || lower.includes("zyada"))) {
+        invokeNativeAction("CHANGE_MEDIA_VOLUME", { level: 90 });
+        return;
+      }
+      if ((lower.includes("volume") || lower.includes("awaaz") || lower.includes("awaz")) &&
+          (lower.includes("kam") || lower.includes("down") || lower.includes("dheere") || lower.includes("low"))) {
+        invokeNativeAction("CHANGE_MEDIA_VOLUME", { level: 25 });
+        return;
+      }
+      if (lower.includes("next song") || lower.includes("agla gaana")) {
+        invokeNativeAction("MEDIA_NEXT");
+        return;
+      }
+      if (lower.includes("pause") || lower.includes("gaana roko")) {
+        invokeNativeAction("MEDIA_PAUSE");
+        return;
+      }
+      if (lower.includes("resume") || lower.includes("play music") || lower.includes("gaana chalao")) {
+        invokeNativeAction("MEDIA_PLAY");
+        return;
+      }
+
+      // 7. Alarm, Timer, Maps, Call
+      if (lower.includes("alarm")) {
+        const hourMatch = text.match(/(\d{1,2})/);
+        const hr = hourMatch ? parseInt(hourMatch[1], 10) : 7;
+        invokeNativeAction("CREATE_ALARM", { hour: hr, minute: 0, message: "SHIV AI Alarm" });
+        return;
+      }
+      if (lower.includes("timer")) {
+        const minMatch = text.match(/(\d{1,3})/);
+        const mins = minMatch ? parseInt(minMatch[1], 10) : 5;
+        invokeNativeAction("START_TIMER", { seconds: mins * 60, message: "SHIV AI Timer" });
+        return;
+      }
+      if (lower.includes("map") || lower.includes("navigation") || lower.includes("rasta")) {
+        const loc = text.replace(/map|maps|navigation|rasta|dikhao|kholo|me|mein|chalo/gi, "").trim() || "Jodhpur";
+        invokeNativeAction("OPEN_MAPS", { query: loc });
+        return;
+      }
+      if (lower.startsWith("call ") || lower.includes("call lagao") || lower.includes("phone lagao")) {
+        const num = text.replace(/call|phone|lagao|karo|to/gi, "").trim();
+        invokeNativeAction("CALL_CONTACT", { target: num });
+        return;
+      }
+
+      // 8. Device Telemetry & Battery Status
+      if (lower.includes("battery") || lower.includes("telemetry") || lower.includes("phone ki jankari")) {
+        invokeNativeAction("DEVICE_TELEMETRY");
+        return;
+      }
+
+      // 9. PC / Desktop Remote Control by Voice
+      if (lower.includes("pc ") || lower.includes("desktop") || lower.includes("laptop")) {
+        if (lower.includes("lock")) {
+          sendPcCommand("PC_LOCK");
+          speakResponse("PC screen lock command bhej diya gaya hai.");
+          return;
+        }
+        if (lower.includes("screenshot")) {
+          sendPcCommand("PC_SCREENSHOT");
+          speakResponse("PC par screenshot le liya gaya hai.");
+          return;
+        }
+        if (lower.includes("chrome") || lower.includes("browser")) {
+          sendPcCommand("PC_OPEN_BROWSER");
+          speakResponse("PC par Chrome browser launch kiya ja raha hai.");
+          return;
+        }
+        if (lower.includes("vscode") || lower.includes("vs code")) {
+          sendPcCommand("PC_OPEN_VSCODE");
+          speakResponse("PC par VS Code launch kiya ja raha hai.");
+          return;
+        }
+        openModal("pcModal");
+        speakResponse("PC aur Desktop Remote Control center khol diya gaya hai.");
+        return;
+      }
+
+      // 10. Autonomous Code Generation & GitHub by Voice
+      if (lower.includes("code likho") || lower.includes("write code") || lower.includes("program banao")) {
+        openModal("codeModal");
+        document.getElementById("codePromptInput").value = text;
+        generateAgentCode();
+        return;
+      }
+      if (lower.includes("github")) {
+        openModal("codeModal");
+        inspectGithubRepo();
+        return;
+      }
+
+      // 11. APK Download Modal by Voice
+      if (lower.includes("apk") && (lower.includes("download") || lower.includes("install") || lower.includes("link"))) {
+        openModal("apkModal");
+        speakResponse("Direct APK download links khol diye gaye hain. Yahan se 1-click me CleanInstall APK download karein.");
+        return;
+      }
+
+      // 12. Permanent Brain Memory by Voice
+      if (lower.startsWith("remember ") || lower.startsWith("yaad rakho")) {
+        const fact = text.replace(/^(remember|yaad rakho ki|yaad rakho)\s*/i, "").trim();
+        brainMemories.unshift(fact);
+        localStorage.setItem("MyraaBrainDatabase_ShriRamNag", JSON.stringify(brainMemories));
+        renderBrainMemories();
+        speakResponse(`Shri Ram Nag ke permanent Brain Database me save ho gaya: "${fact}"`);
+        return;
+      }
+
+      // 13. Google Search by Voice
+      if (lower.includes("google par") && (lower.includes("search") || lower.includes("dhundo"))) {
+        const q = text.replace(/google|par|pe|search|karo|dhundo/gi, "").trim();
+        invokeNativeAction("WEB_SEARCH", { query: q || text });
+        return;
+      }
+
+      // 14. Conversational AI Response via Google Gemini Live / Free AI Brain
+      speakResponse(`⏳ ${currentAvatar.name} soch rahi hai...`, false);
+      try {
+        const reply = await queryGeminiOrFreeAi(text, "openai");
+        speakResponse(reply, true);
+      } catch (e) {
+        speakResponse(`${currentAvatar.name} (SHIV AI v5.0): "${text}" command processed.`, true);
+      }
+    }
+
+    // ============================================================================
+    // NATIVE ANDROID TTS + WEB SPEECH SYNTHESIS + HANDS-FREE AUTO RE-LISTEN
+    // ============================================================================
+    function speakResponse(text, allowSpeak = true) {
+      document.getElementById("activeSpeakerLabel").textContent = `${currentAvatar.name} • OMNI-CORE [SPEAKING]`;
+      document.getElementById("speechText").textContent = text;
+      const cleanForSpeech = text.replace(/[*#`_~>]/g, "").slice(0, 360);
+      const durationMs = Math.min(7000, Math.max(1800, cleanForSpeech.length * 55));
+      animateLipSync(durationMs);
+
+      if (!allowSpeak) return;
+
+      // 1. Native Android TextToSpeech in BridgeActivity.java (Works 100% in APK!)
+      if (window.MyraaNativeBridge && typeof window.MyraaNativeBridge.speakNative === "function") {
+        try {
+          window.MyraaNativeBridge.speakNative(cleanForSpeech, selectedVoiceLang);
+        } catch (e) {}
+      } else if ("speechSynthesis" in window) {
+        // 2. Browser SpeechSynthesis Fallback
+        try {
+          window.speechSynthesis.cancel();
+          const u = new SpeechSynthesisUtterance(cleanForSpeech);
+          u.lang = selectedVoiceLang;
+          u.rate = 1.03;
+          window.speechSynthesis.speak(u);
+        } catch (e) {}
+      }
+
+      // 3. If Hands-Free Live Mode is active, automatically re-open the mic after speaking
+      if (handsFreeLiveMode) {
+        setTimeout(() => {
+          if (handsFreeLiveMode && !isListening) {
+            startVoiceCapture();
+          }
+        }, durationMs + 600);
+      }
+    }
+
+    function animateLipSync(durationMs) {
+      const bars = document.querySelectorAll(".lipsync-bar");
+      const start = Date.now();
+      const timer = setInterval(() => {
+        if (Date.now() - start > durationMs) {
+          clearInterval(timer);
+          bars.forEach(b => b.style.height = "3px");
+          if (!isListening) {
+            document.getElementById("activeSpeakerLabel").textContent = `${currentAvatar.name} • OMNI-CORE [READY]`;
+          }
+          return;
+        }
+        bars.forEach(b => {
+          b.style.height = (3 + Math.floor(Math.random() * 10)) + "px";
+        });
+      }, 90);
+    }
+
+    // ============================================================================
+    // OMNI-SEARCH, GITHUB CODE AGENT & PC REMOTE CONTROLLER
+    // ============================================================================
     async function runOmniSearch(mode) {
       const q = document.getElementById("omniQueryInput").value.trim();
       const box = document.getElementById("omniResultBox");
@@ -760,18 +1473,17 @@ HTTPServer(("0.0.0.0", 8765), MyraaPcHandler).serve_forever()</div>
 
       try {
         if (mode === "AI") {
-          const answer = await queryFreeAiBrain(q, model);
+          const answer = await queryGeminiOrFreeAi(q, model);
           box.textContent = answer;
-          speakResponse(answer.slice(0, 220));
+          speakResponse(answer.slice(0, 240));
         } else if (mode === "WIKI") {
           const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(q)}`);
           const data = await res.json();
           if (data.extract) {
             box.textContent = `📚 ${data.title}\n\n${data.extract}`;
-            speakResponse(data.extract.slice(0, 200));
+            speakResponse(data.extract.slice(0, 220));
           } else {
-            box.textContent = `No exact Wikipedia summary found for "${q}". Launching Free AI fallback...`;
-            const answer = await queryFreeAiBrain(`Explain ${q} in detail`, model);
+            const answer = await queryGeminiOrFreeAi(`Explain ${q} in detail`, model);
             box.textContent = answer;
           }
         } else if (mode === "GITHUB") {
@@ -791,11 +1503,10 @@ HTTPServer(("0.0.0.0", 8765), MyraaPcHandler).serve_forever()</div>
           box.textContent = `Launched native Google Web Search for "${q}".`;
         }
       } catch (err) {
-        box.textContent = `Omni-Search Notice: ${err.message}. You can also tap Google Web Search to open directly.`;
+        box.textContent = `Omni-Search Notice: ${err.message}.`;
       }
     }
 
-    // GitHub Live Inspector & Autonomous Code Agent
     async function inspectGithubRepo() {
       const repo = document.getElementById("ghRepoInput").value.trim() || "shriramnag/myraa-unlimited-ai";
       const statusEl = document.getElementById("ghRepoStatus");
@@ -817,8 +1528,9 @@ HTTPServer(("0.0.0.0", 8765), MyraaPcHandler).serve_forever()</div>
 
         statusEl.innerHTML = `
           <div style="color:#fff; font-weight:700;">📦 ${repoData.full_name || repo} (Branch: ${repoData.default_branch || 'main'})</div>
-          <div>⭐ Stars: ${repoData.stargazers_count ?? 0} | 🍴 Forks: ${repoData.forks_count ?? 0} | Open Issues: ${repoData.open_issues_count ?? 0}</div>
+          <div>⭐ Stars: ${repoData.stargazers_count ?? 0} | 🍴 Forks: ${repoData.forks_count ?? 0}</div>
           <div style="color:var(--emerald); margin-top:3px;">⚡ Latest GitHub Action: ${runBadge}</div>
+          <div style="margin-top:6px;"><a href="https://github.com/${repo}/releases" target="_blank" style="color:var(--cyan); font-weight:800;">📥 Open Direct Release APK Downloads ↗</a></div>
         `;
         speakResponse(`GitHub repository ${repo} checked. Latest workflow status is ${latestRun ? (latestRun.conclusion || latestRun.status) : 'ready'}.`);
       } catch (e) {
@@ -837,9 +1549,9 @@ HTTPServer(("0.0.0.0", 8765), MyraaPcHandler).serve_forever()</div>
       box.textContent = `// ⏳ CODEX Autonomous Agent is writing ${lang} code for:\n// "${prompt}"...`;
       try {
         const fullPrompt = `Write complete, clean, working ${lang} code for: ${prompt}. Return ONLY code with helpful comments.`;
-        const code = await queryFreeAiBrain(fullPrompt, "qwen-coder");
+        const code = await queryGeminiOrFreeAi(fullPrompt, "qwen-coder");
         box.textContent = code.replace(/^```[a-zA-Z]*\n?/gm, "").replace(/```$/gm, "").trim();
-        speakResponse(`CODEX has generated your ${lang} code. You can copy, share, or run it in the sandbox.`);
+        speakResponse(`CODEX ne aapka ${lang} code tayyar kar diya hai.`);
       } catch (e) {
         box.textContent = `// Offline Fallback Template (${lang})\n// Task: ${prompt}\nconsole.log("SHIV AI Code Agent Ready for: ${prompt.replace(/"/g, '\\"')}");`;
       }
@@ -865,7 +1577,7 @@ HTTPServer(("0.0.0.0", 8765), MyraaPcHandler).serve_forever()</div>
       localStorage.setItem("MyraaPcEndpoint", pcEndpoint);
       document.getElementById("pcConnBadge").textContent = "LINKED";
       document.getElementById("pcConnBadge").className = "badge ok";
-      document.getElementById("pcStatusText").innerHTML = `Linked to PC Bridge at <b>http://${pcEndpoint}</b>. All mouse, keyboard, and OS commands will dispatch to this endpoint.`;
+      document.getElementById("pcStatusText").innerHTML = `Linked to PC Bridge at <b>http://${pcEndpoint}</b>.`;
       speakResponse(`PC Desktop Controller linked to ${pcEndpoint}.`);
     }
 
@@ -879,9 +1591,7 @@ HTTPServer(("0.0.0.0", 8765), MyraaPcHandler).serve_forever()</div>
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
         });
-      } catch (e) {
-        // Queue locally if PC server isn't reachable on current network
-      }
+      } catch (e) {}
       auditLogs.unshift(`[PC-BRIDGE] ${cmd} -> ${host}`);
       renderAuditLogs();
     }
@@ -927,107 +1637,6 @@ HTTPServer(("0.0.0.0", 8765), MyraaPcHandler).serve_forever()</div>
       invokeNativeAction("SHARE_TEXT", { message: text });
     }
 
-    function speakResponse(text) {
-      document.getElementById("activeSpeakerLabel").textContent = `${currentAvatar.name} • OMNI-CORE [SPEAKING]`;
-      document.getElementById("speechText").textContent = text;
-      animateLipSync(2200);
-      if ("speechSynthesis" in window) {
-        try {
-          window.speechSynthesis.cancel();
-          const u = new SpeechSynthesisUtterance(text);
-          u.rate = 1.03;
-          window.speechSynthesis.speak(u);
-        } catch (e) {}
-      }
-    }
-
-    function animateLipSync(durationMs) {
-      const bars = document.querySelectorAll(".lipsync-bar");
-      const start = Date.now();
-      const timer = setInterval(() => {
-        if (Date.now() - start > durationMs) {
-          clearInterval(timer);
-          bars.forEach(b => b.style.height = "3px");
-          document.getElementById("activeSpeakerLabel").textContent = `${currentAvatar.name} • OMNI-CORE [READY]`;
-          return;
-        }
-        bars.forEach(b => {
-          b.style.height = (3 + Math.floor(Math.random() * 10)) + "px";
-        });
-      }, 90);
-    }
-
-    async function sendMessage() {
-      const input = document.getElementById("chatInput");
-      const text = input.value.trim();
-      if (!text) return;
-      input.value = "";
-      const lower = text.toLowerCase();
-
-      if (lower.includes("flashlight on") || lower.includes("torch on")) {
-        invokeNativeAction("FLASHLIGHT_ON");
-      } else if (lower.includes("flashlight off") || lower.includes("torch off")) {
-        invokeNativeAction("FLASHLIGHT_OFF");
-      } else if (lower.includes("camera")) {
-        invokeNativeAction("OPEN_CAMERA");
-      } else if (lower.includes("youtube")) {
-        invokeNativeAction("YOUTUBE_SEARCH", { query: text.replace(/youtube/i, "").trim() || text });
-      } else if (lower.includes("wifi") || lower.includes("wi-fi")) {
-        invokeNativeAction("OPEN_WIFI_SETTINGS");
-      } else if (lower.includes("bluetooth")) {
-        invokeNativeAction("OPEN_BLUETOOTH_SETTINGS");
-      } else if (lower.includes("cast") || lower.includes("screen mirror")) {
-        invokeNativeAction("OPEN_CAST_SETTINGS");
-      } else if (lower.includes("github")) {
-        openModal("codeModal");
-        inspectGithubRepo();
-      } else if (lower.includes("pc ") || lower.includes("desktop")) {
-        openModal("pcModal");
-        speakResponse("Opened PC & Desktop Remote Control Deck.");
-      } else if (lower.startsWith("remember ")) {
-        const fact = text.replace(/remember /i, "").trim();
-        brainMemories.unshift(fact);
-        localStorage.setItem("MyraaBrainDatabase_ShriRamNag", JSON.stringify(brainMemories));
-        renderBrainMemories();
-        speakResponse(`Stored "${fact}" in Shri Ram Nag's permanent Brain Database.`);
-      } else {
-        speakResponse(`⏳ ${currentAvatar.name} is thinking via Free AI Brain...`);
-        try {
-          const reply = await queryFreeAiBrain(text, "openai");
-          speakResponse(reply);
-        } catch (e) {
-          speakResponse(`${currentAvatar.name} (SHIV AI v4.0): "${text}" processed. Use Omni Search, GitHub Code Agent, PC Control, or 52 Mobile Actions below.`);
-        }
-      }
-    }
-
-    function toggleVoiceInput() {
-      const btn = document.getElementById("micBtn");
-      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (SpeechRec) {
-        try {
-          const rec = new SpeechRec();
-          rec.lang = "hi-IN";
-          btn.classList.add("listening");
-          rec.onresult = (e) => {
-            const transcript = e.results[0][0].transcript;
-            document.getElementById("chatInput").value = transcript;
-            btn.classList.remove("listening");
-            sendMessage();
-          };
-          rec.onerror = () => btn.classList.remove("listening");
-          rec.onend = () => btn.classList.remove("listening");
-          rec.start();
-          return;
-        } catch (err) {}
-      }
-      btn.classList.toggle("listening");
-      if (btn.classList.contains("listening")) {
-        speakResponse("Listening for voice command from Supreme Owner Shri Ram Nag...");
-        setTimeout(() => btn.classList.remove("listening"), 3000);
-      }
-    }
-
     function openModal(id) {
       closeAllModals();
       document.getElementById(id).classList.add("open");
@@ -1039,8 +1648,8 @@ HTTPServer(("0.0.0.0", 8765), MyraaPcHandler).serve_forever()</div>
 
     renderAvatars();
     renderActions();
-    renderCoreTools();
     renderBrainMemories();
+    initGeminiKey();
   </script>
 </body>
 </html>

@@ -3,6 +3,7 @@ package com.getcapacitor;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import com.getcapacitor.annotation.Permission;
@@ -50,6 +51,19 @@ public class Plugin {
 
     protected void requestPermissionForAlias(String alias, PluginCall call, String callbackName) {
         try {
+            if (activity != null) {
+                CapacitorPlugin annotation = getClass().getAnnotation(CapacitorPlugin.class);
+                if (annotation != null) {
+                    for (Permission perm : annotation.permissions()) {
+                        if (perm.alias().equals(alias)) {
+                            activity.runOnUiThread(() ->
+                                ActivityCompat.requestPermissions(activity, perm.strings(), 5001)
+                            );
+                            break;
+                        }
+                    }
+                }
+            }
             Method m = getClass().getDeclaredMethod(callbackName, PluginCall.class);
             m.setAccessible(true);
             m.invoke(this, call);
