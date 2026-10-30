@@ -1,9 +1,0 @@
-{
-  "appId": "ai.myraa.mobile",
-  "appName": "MYRAA",
-  "webDir": "dist",
-  "bundledWebRuntime": false,
-  "server": {
-    "androidScheme": "https"
-  }
-}

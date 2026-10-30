@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
-import { CharacterRole, TaskRecord, BrainMemory } from "./types";
+import React, { useState, useEffect } from "react";
+import { CharacterRole, TaskRecord } from "./types";
 import { HolographicAvatarStage, ROLE_THEMES } from "./components/HolographicAvatarStage";
 import { AndroidStatusBar } from "./components/AndroidStatusBar";
 import { AndroidNotificationShade } from "./components/AndroidNotificationShade";
@@ -13,7 +13,6 @@ import { ApkBuildDoctorModal } from "./components/ApkBuildDoctorModal";
 import { agentSupervisor } from "./services/agentSupervisor";
 import { nativeBridge } from "./services/nativeBridge";
 import { voiceBiometrics } from "./services/voiceBiometrics";
-import { brainDatabase } from "./services/brainDatabase";
 import {
   Mic,
   MicOff,
@@ -42,7 +41,7 @@ export function App() {
   const [userPrompt, setUserPrompt] = useState("");
   const [inputText, setInputText] = useState("");
   const [replyText, setReplyText] = useState(
-    "नमस्ते श्री राम नाग जी! आपके Android APK बिल्ड की सभी 5 कमियाँ (Gradle, AndroidManifest, strings.xml और MyraaNativePlugin के 43 एक्शन्स) 100% ठीक कर दी गई हैं!"
+    "नमस्ते श्री राम नाग जी! Google AI Studio (Gemini Audio) का प्राकृतिक आवाज़ इंजन सक्रिय है। सभी 6 कैरेक्टर्स (MYRAA: Kore, AURA: Aoede, PIXEL: Despina, CODEX: Puck, SENTINEL: Fenrir, SAGE: Charon) 100% तैयार हैं!"
   );
   const [activeToolId, setActiveToolId] = useState<string | undefined>(undefined);
 
@@ -74,6 +73,14 @@ export function App() {
     };
   }, []);
 
+  const triggerAssistantResponse = (prompt: string, answer: string, toolId?: string, roleOverride?: CharacterRole) => {
+    setUserPrompt(prompt);
+    setReplyText(answer);
+    setActiveToolId(toolId);
+    const targetRole = roleOverride || activeRole;
+    voiceBiometrics.speakWithGeminiVoice(answer, targetRole);
+  };
+
   const handleToggleFlashlight = () => {
     const on = nativeBridge.toggleFlashlight();
     setDeviceState(nativeBridge.getDeviceState());
@@ -81,11 +88,11 @@ export function App() {
     triggerAssistantResponse("Torch Toggle", msg);
   };
 
-  const triggerAssistantResponse = (prompt: string, answer: string, toolId?: string) => {
-    setUserPrompt(prompt);
-    setReplyText(answer);
-    setActiveToolId(toolId);
-    voiceBiometrics.speakAnimeVoice(answer);
+  const handleRoleChange = (newRole: CharacterRole) => {
+    setActiveRole(newRole);
+    const theme = ROLE_THEMES[newRole];
+    const introMsg = `नमस्ते श्री राम नाग जी! मैं ${theme.name} हूँ। (${theme.voiceDescription})`;
+    triggerAssistantResponse("Switch Role", introMsg, undefined, newRole);
   };
 
   const handleCommandSubmit = async (queryText?: string) => {
@@ -107,7 +114,6 @@ export function App() {
 
     agentSupervisor.transitionState(task.taskId, "PLANNING", "Checking security policy & intent...");
 
-    // Check specific intent patterns
     const lower = query.toLowerCase();
 
     // 1. Flashlight
@@ -117,7 +123,7 @@ export function App() {
       setDeviceState(nativeBridge.getDeviceState());
       const resMsg = on ? "फ्लैशलाइट चालू (ON) कर दी गई है।" : "फ्लैशलाइट बंद (OFF) कर दी गई है।";
       agentSupervisor.verifyAndCompleteTask(task.taskId, { ok: true, message: resMsg });
-      triggerAssistantResponse(query, resMsg);
+      triggerAssistantResponse(query, resMsg, undefined, specialist.avatar);
       return;
     }
 
@@ -128,7 +134,7 @@ export function App() {
       setIsAppsModalOpen(true);
       const resMsg = "कॉल डायलर तैयार है। कृपया स्क्रीन पर सुरक्षा पुष्टि करें।";
       agentSupervisor.verifyAndCompleteTask(task.taskId, { ok: true, message: resMsg });
-      triggerAssistantResponse(query, resMsg);
+      triggerAssistantResponse(query, resMsg, undefined, specialist.avatar);
       return;
     }
 
@@ -138,7 +144,7 @@ export function App() {
       setIsAppsModalOpen(true);
       const resMsg = "मैसेज कंपोज़र खुल गया है। आप तुरंत संदेश भेज सकते हैं।";
       agentSupervisor.verifyAndCompleteTask(task.taskId, { ok: true, message: resMsg });
-      triggerAssistantResponse(query, resMsg);
+      triggerAssistantResponse(query, resMsg, undefined, specialist.avatar);
       return;
     }
 
@@ -147,7 +153,7 @@ export function App() {
       setIsBrainDbOpen(true);
       const resMsg = "लॉन्ग-टर्म ब्रेन डेटाबेस खुल गया है। आपकी सभी स्थायी मेमोरीज़ यहाँ सुरक्षित हैं।";
       agentSupervisor.verifyAndCompleteTask(task.taskId, { ok: true, message: resMsg });
-      triggerAssistantResponse(query, resMsg);
+      triggerAssistantResponse(query, resMsg, undefined, specialist.avatar);
       return;
     }
 
@@ -156,17 +162,17 @@ export function App() {
       setIsShivCoreOpen(true);
       const resMsg = "शिव एआई कोर के सभी 11 टूल्स और Deep Research वर्कबेंच तैयार है!";
       agentSupervisor.verifyAndCompleteTask(task.taskId, { ok: true, message: resMsg });
-      triggerAssistantResponse(query, resMsg);
+      triggerAssistantResponse(query, resMsg, "gpt-researcher", specialist.avatar);
       return;
     }
 
     // 6. Camera
     if (lower.includes("camera") || lower.includes("कैमरा") || lower.includes("photo") || lower.includes("फ़ोटो")) {
-      setActiveAppDrawerTab("CAMERA");
+      setActiveAppDrawerTab("DRAWER");
       setIsAppsModalOpen(true);
       const resMsg = "कैमरा व्यूफ़ाइंडर चालू किया गया।";
       agentSupervisor.verifyAndCompleteTask(task.taskId, { ok: true, message: resMsg });
-      triggerAssistantResponse(query, resMsg);
+      triggerAssistantResponse(query, resMsg, undefined, specialist.avatar);
       return;
     }
 
@@ -184,7 +190,7 @@ export function App() {
         resp = `हाँ श्री राम नाग जी, मैंने आपका निर्देश "${query}" समझ लिया है। सभी सिस्टम सुरक्षित और तैयार हैं!`;
       }
       agentSupervisor.verifyAndCompleteTask(task.taskId, { ok: true, message: resp });
-      triggerAssistantResponse(query, resp);
+      triggerAssistantResponse(query, resp, undefined, specialist.avatar);
     }, 400);
   };
 
@@ -198,24 +204,25 @@ export function App() {
       },
       (err) => {
         setIsListening(false);
-        triggerAssistantResponse("Voice Command", "माफ़ कीजिए, आवाज़ समझ नहीं आई। कृपया दोबारा बोलें या लिखकर भेजें।");
+        triggerAssistantResponse(
+          "Voice Command",
+          "माफ़ कीजिए, आवाज़ समझ नहीं आई। कृपया दोबारा बोलें या लिखकर भेजें।"
+        );
       }
     );
   };
 
-  const theme = ROLE_THEMES[activeRole] || ROLE_THEMES.MYRAA;
+  const currentTheme = ROLE_THEMES[activeRole] || ROLE_THEMES.MYRAA;
 
   return (
     <div className="relative min-h-screen w-full flex items-center justify-center p-0 sm:p-4 bg-slate-950 overflow-hidden font-sans">
-      {/* Background Ambient Glow */}
+      {/* Background Radial Glow */}
       <div
         className="absolute inset-0 opacity-20 filter blur-3xl pointer-events-none transition-all duration-700"
-        style={{
-          background: `radial-gradient(circle at 50% 30%, ${theme.hex}, transparent 70%)`,
-        }}
+        style={{ background: `radial-gradient(circle at 50% 30%, ${currentTheme.hex}, transparent 70%)` }}
       />
 
-      {/* Main Container: Mobile Frame or Full Viewport */}
+      {/* Main Container */}
       <div
         className={`relative flex flex-col justify-between overflow-hidden transition-all duration-300 shadow-2xl ${
           isPhoneFrameMode
@@ -223,19 +230,19 @@ export function App() {
             : "w-full h-screen rounded-none bg-slate-950"
         }`}
       >
-        {/* Flashlight Screen Illumination Overlay (When Flashlight ON) */}
+        {/* Flashlight Beam Simulation */}
         {deviceState.flashlightOn && (
           <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-amber-300/30 to-transparent pointer-events-none z-30 animate-pulse" />
         )}
 
-        {/* 1. Android Status Bar (Click to open Notification Shade) */}
+        {/* Android Status Bar */}
         <AndroidStatusBar
           onPullDownShade={() => setIsNotificationShadeOpen(true)}
-          batteryLevel={98}
+          batteryLevel={deviceState.batteryLevel}
           isFlashlightOn={deviceState.flashlightOn}
         />
 
-        {/* Top Control Bar: Mode Toggle, Flashlight, Voice Lock */}
+        {/* Supreme Owner Header */}
         <div className="flex items-center justify-between px-3 py-1.5 z-20 bg-slate-950/70 border-b border-white/5 backdrop-blur-sm text-[10px]">
           <div className="flex items-center gap-1.5">
             <span className="font-bold text-white flex items-center gap-1">
@@ -243,23 +250,21 @@ export function App() {
               <span>SHIV AI</span>
             </span>
             <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-[#00E676] font-mono border border-emerald-500/30">
-              v3.0 Shri Ram Nag
+              Shri Ram Nag
             </span>
           </div>
 
           <div className="flex items-center gap-1.5">
-            {/* APK Build Doctor Button */}
             <button
               onClick={() => setIsApkDoctorOpen(true)}
               type="button"
               className="px-2 py-0.5 rounded-full font-bold flex items-center gap-1 border bg-[#00E676]/20 text-[#00E676] border-[#00E676]/50 hover:bg-[#00E676]/30 transition shadow-sm"
-              title="APK Build Fix Report & 1-Command Builder"
+              title="APK Build Fix Report"
             >
               <Wrench className="w-2.5 h-2.5" />
-              <span>APK Fixed ✓</span>
+              <span>Build Fix ✓</span>
             </button>
 
-            {/* Flashlight Button */}
             <button
               onClick={handleToggleFlashlight}
               type="button"
@@ -273,7 +278,6 @@ export function App() {
               <Flashlight className="w-3 h-3" />
             </button>
 
-            {/* Voice Lock Indicator Button */}
             <button
               onClick={() => {
                 const next = voiceBiometrics.toggleVoiceLock();
@@ -291,24 +295,23 @@ export function App() {
               <span>{voiceLockActive ? "Voice Lock" : "Unlocked"}</span>
             </button>
 
-            {/* Phone Frame Toggle */}
             <button
               onClick={() => setIsPhoneFrameMode(!isPhoneFrameMode)}
               type="button"
               className="p-1.5 rounded-full bg-white/5 hover:bg-white/15 text-slate-300 border border-white/10 transition"
-              title={isPhoneFrameMode ? "Expand to Full Viewport" : "Switch to Android Phone Handset"}
+              title={isPhoneFrameMode ? "Expand to Full Viewport" : "Switch to Phone Frame"}
             >
               {isPhoneFrameMode ? <Maximize2 className="w-3 h-3" /> : <Minimize2 className="w-3 h-3" />}
             </button>
           </div>
         </div>
 
-        {/* 2. Middle Content Area: Avatar Stage & Live Speech Bubble */}
+        {/* Main Content Area */}
         <div className="flex-1 flex flex-col justify-between overflow-y-auto px-2 py-1 relative z-10">
-          {/* Holographic 3D Video Avatar Stage */}
+          {/* 3D Holographic Stage */}
           <HolographicAvatarStage
             activeRole={activeRole}
-            onSelectRole={(r) => setActiveRole(r)}
+            onSelectRole={handleRoleChange}
             isSpeaking={isSpeaking}
             cameraMode={cameraMode}
             onToggleCameraMode={() =>
@@ -316,7 +319,7 @@ export function App() {
             }
           />
 
-          {/* Live Typewriter Speech / Chat Bubble */}
+          {/* Live Chat Bubble */}
           <div className="my-1.5">
             <LiveChatBubble
               role={activeRole}
@@ -324,17 +327,19 @@ export function App() {
               replyText={replyText}
               toolId={activeToolId}
               onClose={() => setReplyText("")}
+              onReplayVoice={() => voiceBiometrics.speakWithGeminiVoice(replyText, activeRole)}
             />
           </div>
 
-          {/* Task Monitor HUD */}
+          {/* 10-State Task Monitor HUD */}
           <div className="my-1">
             <TaskMonitorHud tasks={tasks} />
           </div>
         </div>
 
-        {/* 3. Bottom Control Dock: 5 Quick Features (11 Tools, Brain DB, Apps, Vault, APK Fix) */}
+        {/* Bottom Control Bar */}
         <div className="px-3 pt-1 pb-1 z-20 bg-slate-950/95 border-t border-white/10 backdrop-blur-md">
+          {/* 5 Master Feature Triggers */}
           <div className="grid grid-cols-5 gap-1.5 mb-2">
             <button
               onClick={() => setIsShivCoreOpen(true)}
@@ -362,7 +367,7 @@ export function App() {
               type="button"
               className="flex flex-col items-center justify-center p-1.5 rounded-xl bg-slate-900 border border-emerald-500/30 hover:border-emerald-400 hover:bg-slate-800 transition"
             >
-              <Smartphone className="w-3.5 h-3.5 text-[#00E676] mb-0.5" />
+              <Layers className="w-3.5 h-3.5 text-[#00E676] mb-0.5" />
               <span className="text-[9px] font-bold text-slate-200">Apps</span>
             </button>
 
@@ -385,7 +390,7 @@ export function App() {
             </button>
           </div>
 
-          {/* Interactive Input Bar (Keyboard & Voice Mic) */}
+          {/* Voice Input & Command Field */}
           <div className="flex items-center gap-1.5">
             <button
               onClick={handleVoiceListen}
@@ -395,9 +400,9 @@ export function App() {
                   ? "bg-rose-500 border-rose-400 text-white animate-pulse"
                   : "bg-slate-900 border-white/15 text-slate-300 hover:text-white hover:bg-slate-800"
               }`}
-              title="Speak voice command (Web Speech API)"
+              title="Speak voice command (Gemini Audio Engine)"
             >
-              {isListening ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4 text-sky-400" />}
+              {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4 text-sky-400" />}
             </button>
 
             <div className="relative flex-1">
@@ -407,9 +412,7 @@ export function App() {
                 onChange={(e) => setInputText(e.target.value)}
                 placeholder="बोलें या टाइप करें (उदा: 'कॉल करो', 'डीप रिसर्च', 'फ्लैशलाइट')..."
                 className="w-full px-3.5 py-2.5 bg-slate-900 border border-white/15 rounded-2xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 transition pr-9"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleCommandSubmit();
-                }}
+                onKeyDown={(e) => e.key === "Enter" && handleCommandSubmit()}
               />
               <button
                 onClick={() => handleCommandSubmit()}
@@ -422,7 +425,7 @@ export function App() {
             </div>
           </div>
 
-          {/* 4. Android System Navigation Pill */}
+          {/* Android Home Gesture Pill */}
           <div className="flex items-center justify-center pt-2 pb-0.5">
             <div
               onClick={() => {
@@ -439,17 +442,17 @@ export function App() {
           </div>
         </div>
 
-        {/* Modals & Panels */}
+        {/* Modals */}
         <AndroidNotificationShade
           isOpen={isNotificationShadeOpen}
           onClose={() => setIsNotificationShadeOpen(false)}
-          onActionTriggered={(act, msg) => triggerAssistantResponse(act, msg)}
+          onActionTriggered={(a, m) => triggerAssistantResponse(a, m)}
         />
 
         <ShivAiCorePanel
           isOpen={isShivCoreOpen}
           onClose={() => setIsShivCoreOpen(false)}
-          onRunToolResult={(name, query, out) => triggerAssistantResponse(query, out, name)}
+          onRunToolResult={(z, prompt, output) => triggerAssistantResponse(prompt, output, z)}
         />
 
         <BrainDatabasePanel
@@ -467,7 +470,7 @@ export function App() {
           isOpen={isAppsModalOpen}
           activeAppId={activeAppDrawerTab}
           onClose={() => setIsAppsModalOpen(false)}
-          onActionTriggered={(act, msg) => triggerAssistantResponse(act, msg)}
+          onActionTriggered={(a, m) => triggerAssistantResponse(a, m)}
         />
 
         <AdminVaultModal
@@ -483,4 +486,3 @@ export function App() {
     </div>
   );
 }
-export default App;

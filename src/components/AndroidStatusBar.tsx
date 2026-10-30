@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Wifi, Signal, Battery, Bell, Sun, Volume2 } from "lucide-react";
+import { Wifi, Battery, Volume2, Flashlight } from "lucide-react";
 
 interface Props {
   onPullDownShade: () => void;
@@ -15,55 +15,36 @@ export const AndroidStatusBar: React.FC<Props> = ({
   const [timeStr, setTimeStr] = useState("");
 
   useEffect(() => {
-    const updateTime = () => {
-      const d = new Date();
+    const update = () => {
+      const now = new Date();
       setTimeStr(
-        d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })
+        now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })
       );
     };
-    updateTime();
-    const interval = setInterval(updateTime, 10000);
+    update();
+    const interval = setInterval(update, 1000);
     return () => clearInterval(interval);
   }, []);
 
   return (
     <div
       onClick={onPullDownShade}
-      className="w-full flex items-center justify-between px-4 py-1.5 text-xs text-slate-200 bg-black/60 backdrop-blur-md select-none cursor-pointer border-b border-white/5 hover:bg-black/80 transition"
-      title="Tap or drag down for Android Notification Shade & Quick Settings"
+      className="flex items-center justify-between w-full px-4 py-1.5 bg-slate-950/90 text-[11px] font-medium text-slate-300 border-b border-white/5 cursor-pointer hover:bg-slate-900 transition select-none z-30"
+      title="Click to open Android Notification & Quick Settings Shade"
     >
-      {/* Left: Time and Notifications Indicator */}
       <div className="flex items-center gap-2">
-        <span className="font-semibold text-slate-100 tracking-tight text-[11px]">
-          {timeStr || "12:30"}
-        </span>
-        <div className="flex items-center gap-1 text-slate-400">
-          <Bell className="w-2.5 h-2.5 text-sky-400" />
-          <img
-            src="./avatars/ic_launcher_round.png"
-            alt="Myraa"
-            className="w-3 h-3 rounded-full border border-sky-400/40"
-            onError={(e) => {
-              (e.target as HTMLElement).style.display = "none";
-            }}
-          />
-          {isFlashlightOn && (
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" title="Flashlight ON" />
-          )}
-        </div>
+        <span className="font-semibold text-white tracking-wide">{timeStr || "12:00"}</span>
+        {isFlashlightOn && (
+          <Flashlight className="w-3 h-3 text-amber-400 fill-amber-400 animate-pulse" />
+        )}
       </div>
 
-      {/* Middle: Phone Camera Punch-Hole Simulation */}
-      <div className="w-3.5 h-3.5 rounded-full bg-slate-950 border border-slate-800 shadow-inner" />
-
-      {/* Right: Telemetry (5G, Wi-Fi, Battery) */}
-      <div className="flex items-center gap-1.5 text-slate-300">
-        <span className="text-[9px] font-bold tracking-tight text-slate-300">5G</span>
-        <Signal className="w-3 h-3 text-slate-200" />
-        <Wifi className="w-3 h-3 text-slate-200" />
-        <div className="flex items-center gap-1 font-mono text-[10px] text-slate-200">
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] font-mono text-emerald-400">5G</span>
+        <Wifi className="w-3 h-3 text-slate-300" />
+        <div className="flex items-center gap-1 font-mono text-[10px]">
           <span>{batteryLevel}%</span>
-          <Battery className="w-3.5 h-3.5 text-emerald-400 fill-emerald-400/20" />
+          <Battery className="w-3.5 h-3.5 text-emerald-400" />
         </div>
       </div>
     </div>

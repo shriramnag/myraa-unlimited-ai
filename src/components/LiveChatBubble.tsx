@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { CharacterRole } from "../types";
 import { ROLE_THEMES } from "./HolographicAvatarStage";
-import { Copy, Check, X, Sparkles } from "lucide-react";
+import { Copy, Check, X, Sparkles, Volume2 } from "lucide-react";
 
 interface Props {
   role: CharacterRole;
@@ -9,6 +9,7 @@ interface Props {
   replyText: string;
   toolId?: string;
   onClose: () => void;
+  onReplayVoice?: () => void;
 }
 
 export const LiveChatBubble: React.FC<Props> = ({
@@ -17,6 +18,7 @@ export const LiveChatBubble: React.FC<Props> = ({
   replyText,
   toolId,
   onClose,
+  onReplayVoice,
 }) => {
   const [displayText, setDisplayText] = useState("");
   const [copied, setCopied] = useState(false);
@@ -27,7 +29,6 @@ export const LiveChatBubble: React.FC<Props> = ({
       setDisplayText("");
       return;
     }
-
     setDisplayText("");
     let idx = 0;
     const step = Math.max(2, Math.ceil(replyText.length / 45));
@@ -40,7 +41,6 @@ export const LiveChatBubble: React.FC<Props> = ({
         setDisplayText(replyText.slice(0, idx) + " ▍");
       }
     }, 28);
-
     return () => clearInterval(timer);
   }, [replyText]);
 
@@ -63,6 +63,9 @@ export const LiveChatBubble: React.FC<Props> = ({
           <span className="text-[11px] font-bold" style={{ color: theme.hex }}>
             {theme.badge}
           </span>
+          <span className="px-1.5 py-0.2 rounded-full text-[8px] font-mono bg-white/10 text-slate-300 border border-white/10">
+            Voice: {theme.voiceName}
+          </span>
           {toolId && (
             <span className="px-2 py-0.5 rounded-full text-[8px] font-bold bg-[#00E676]/20 text-[#00E676] border border-[#00E676]/40">
               ⚡ {toolId}
@@ -70,6 +73,16 @@ export const LiveChatBubble: React.FC<Props> = ({
           )}
         </div>
         <div className="flex items-center gap-1.5">
+          {onReplayVoice && (
+            <button
+              onClick={onReplayVoice}
+              type="button"
+              className="p-1 text-slate-400 hover:text-emerald-400 rounded-md transition"
+              title="Replay Gemini Audio"
+            >
+              <Volume2 className="w-3.5 h-3.5" />
+            </button>
+          )}
           <button
             onClick={handleCopy}
             type="button"
@@ -89,13 +102,11 @@ export const LiveChatBubble: React.FC<Props> = ({
           </button>
         </div>
       </div>
-
       {userPrompt && (
         <div className="text-[10px] text-sky-400 font-medium mb-1 truncate">
           आप: "{userPrompt}"
         </div>
       )}
-
       <div className="text-[11px] text-slate-100 leading-relaxed max-h-[110px] overflow-y-auto whitespace-pre-wrap select-text pr-1">
         {displayText || replyText}
       </div>

@@ -1,22 +1,18 @@
 {
   "name": "myraa-unlimited-ai",
-  "version": "3.0.0",
-  "description": "MYRAA v3.0 / SHIV AI v.2.0.006 — 3D Holographic AI Companion, Android Native Controller, 11 Tools & Long-Term Brain Database for Shri Ram Nag",
   "private": true,
+  "version": "3.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 0.0.0.0 --port 3000",
-    "build": "vite build && mkdir -p app/src/main/assets/public android/app/src/main/assets/public && cp -r dist/* app/src/main/assets/public/ && cp -r dist/* android/app/src/main/assets/public/",
-    "preview": "vite preview --host 0.0.0.0 --port 3000",
-    "lint": "tsc --noEmit",
-    "apk:sync": "npm run build",
-    "apk:build": "bash ./build-apk.sh"
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
+    "clsx": "^2.1.0",
+    "lucide-react": "^0.344.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "lucide-react": "^0.344.0",
-    "clsx": "^2.1.0",
     "tailwind-merge": "^2.2.1"
   },
   "devDependencies": {

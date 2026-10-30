@@ -12,6 +12,9 @@ export interface RoleTheme {
   closeupVideo: string;
   fullVideo: string;
   systemPersona: string;
+  voiceName: "Kore" | "Aoede" | "Despina" | "Puck" | "Fenrir" | "Charon";
+  voiceGender: "Female" | "Male";
+  voiceDescription: string;
 }
 
 export type TaskState =

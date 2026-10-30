@@ -27,14 +27,14 @@ class AgentSupervisorService {
 
   private createInitialWelcomeTask() {
     const task = this.createTask({
-      title: "System Initialization & Holographic Link",
+      title: "System Initialization & Gemini Audio Engine",
       actionName: "SYSTEM_BOOT",
       avatarRole: "MYRAA",
-      model: "Google Gemini Live",
+      model: "Google Gemini 2.5 Flash Audio",
     });
-    this.transitionState(task.taskId, "EXECUTING", "Activating 3D avatar & voice engine...");
+    this.transitionState(task.taskId, "EXECUTING", "Activating 3D avatar & Gemini Audio Engine (Kore/Aoede/Despina/Puck/Fenrir/Charon)...");
     this.transitionState(task.taskId, "VERIFYING", "Verifying on-device brain DB & Android bridge...");
-    this.verifyAndCompleteTask(task.taskId, { ok: true, message: "MYRAA v3.0 / SHIV AI is online and ready for Shri Ram Nag." });
+    this.verifyAndCompleteTask(task.taskId, { ok: true, message: "MYRAA v3.0 / SHIV AI is online with Gemini realistic voices." });
   }
 
   public subscribe(fn: (tasks: TaskRecord[]) => void) {
@@ -62,19 +62,19 @@ class AgentSupervisorService {
 
   public routeIntentToSpecialist(actionOrToolName: string): (typeof SPECIALIST_AGENTS)[0] {
     const name = actionOrToolName.toLowerCase();
-    if (name.includes("memory") || name.includes("brain") || name.includes("fact")) {
+    if (name.includes("memory") || name.includes("brain") || name.includes("fact") || name.includes("याद")) {
       return SPECIALIST_AGENTS.find((a) => a.id === "MemoryContextAgent")!;
     }
-    if (name.includes("research") || name.includes("search") || name.includes("browse")) {
+    if (name.includes("research") || name.includes("search") || name.includes("browse") || name.includes("रिसर्च")) {
       return SPECIALIST_AGENTS.find((a) => a.id === "ResearchAgent")!;
     }
-    if (name.includes("security") || name.includes("scan") || name.includes("shield")) {
+    if (name.includes("security") || name.includes("scan") || name.includes("shield") || name.includes("सुरक्षा")) {
       return SPECIALIST_AGENTS.find((a) => a.id === "CybersecurityAgent")!;
     }
-    if (name.includes("code") || name.includes("bug") || name.includes("git")) {
+    if (name.includes("code") || name.includes("bug") || name.includes("git") || name.includes("कोडिंग")) {
       return SPECIALIST_AGENTS.find((a) => a.id === "SoftwareEngAgent")!;
     }
-    if (name.includes("ui") || name.includes("camera") || name.includes("avatar")) {
+    if (name.includes("ui") || name.includes("camera") || name.includes("avatar") || name.includes("वीडियो")) {
       return SPECIALIST_AGENTS.find((a) => a.id === "UserInterfaceAgent")!;
     }
     return SPECIALIST_AGENTS.find((a) => a.id === "AndroidDevAgent")!;
@@ -84,7 +84,7 @@ class AgentSupervisorService {
     title,
     actionName,
     avatarRole,
-    model = "Google Gemini Live",
+    model = "Google Gemini 2.5 Flash Audio",
   }: {
     title: string;
     actionName: string;
@@ -94,10 +94,8 @@ class AgentSupervisorService {
     const specialist = this.routeIntentToSpecialist(actionName);
     const assignedRole = avatarRole || specialist.avatar;
     this.activeAvatarRole = assignedRole;
-
     const taskId = "task-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 5);
     const now = new Date().toLocaleTimeString();
-
     const record: TaskRecord = {
       taskId,
       title,
@@ -120,7 +118,6 @@ class AgentSupervisorService {
       createdAt: now,
       updatedAt: now,
     };
-
     this.tasks.set(taskId, record);
     this.notify();
     return record;
@@ -129,8 +126,6 @@ class AgentSupervisorService {
   public transitionState(taskId: string, nextState: TaskState, stepDescription?: string) {
     const task = this.tasks.get(taskId);
     if (!task) return;
-
-    // Invariant Enforcement: cannot be marked COMPLETED without passing through VERIFYING
     if (nextState === "COMPLETED") {
       if (task.state !== "VERIFYING" || !task.verified) {
         task.errors.push("Invariant violation: Cannot complete without verification step.");
@@ -139,7 +134,6 @@ class AgentSupervisorService {
         return;
       }
     }
-
     task.state = nextState;
     if (stepDescription) {
       task.currentStep = stepDescription;
@@ -151,21 +145,17 @@ class AgentSupervisorService {
   public verifyAndCompleteTask(taskId: string, result: { ok: boolean; message?: string; error?: string }) {
     const task = this.tasks.get(taskId);
     if (!task) return;
-
     this.transitionState(taskId, "VERIFYING", "Verifying execution outcome...");
-
     if (!result.ok) {
       task.verificationStatus = "FAILED";
       task.errors.push(result.error || "Verification failed");
       this.transitionState(taskId, "FAILED", result.error || "Execution failed");
       return;
     }
-
     task.verified = true;
     task.verificationStatus = "VERIFIED";
     task.completedSteps.push("Verify Outcome");
     if (task.remainingSteps.length > 0) task.remainingSteps.shift();
-
     this.transitionState(taskId, "COMPLETED", result.message || "Task completed and verified.");
   }
 

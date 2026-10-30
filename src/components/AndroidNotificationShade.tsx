@@ -1,24 +1,21 @@
-import React, { useState } from "react";
+import React from "react";
+import { nativeBridge } from "../services/nativeBridge";
 import {
   Wifi,
   Bluetooth,
   Flashlight,
-  BellOff,
-  Sun,
   Volume2,
-  Radio,
-  BatteryCharging,
-  RotateCw,
+  Sun,
+  Shield,
+  Smartphone,
   X,
-  Sparkles,
-  ShieldCheck,
+  ChevronDown,
 } from "lucide-react";
-import { nativeBridge } from "../services/nativeBridge";
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  onActionTriggered: (actionName: string, message: string) => void;
+  onActionTriggered: (action: string, msg: string) => void;
 }
 
 export const AndroidNotificationShade: React.FC<Props> = ({
@@ -26,217 +23,93 @@ export const AndroidNotificationShade: React.FC<Props> = ({
   onClose,
   onActionTriggered,
 }) => {
-  const [wifiOn, setWifiOn] = useState(true);
-  const [bluetoothOn, setBluetoothOn] = useState(true);
-  const [dndOn, setDndOn] = useState(false);
-  const [hotspotOn, setHotspotOn] = useState(false);
-  const [batterySaver, setBatterySaver] = useState(false);
-  const [autoRotate, setAutoRotate] = useState(true);
-  const devState = nativeBridge.getDeviceState();
-  const [brightness, setBrightness] = useState(devState.brightness);
-  const [volume, setVolume] = useState(devState.volume);
-
   if (!isOpen) return null;
+  const dev = nativeBridge.getDeviceState();
 
-  const handleToggleFlashlight = () => {
-    const isNowOn = nativeBridge.toggleFlashlight();
-    onActionTriggered(
-      isNowOn ? "FLASHLIGHT_ON" : "FLASHLIGHT_OFF",
-      isNowOn ? "फ्लैशलाइट चालू (ON) की गई।" : "फ्लैशलाइट बंद (OFF) की गई।"
-    );
-  };
-
-  const handleBrightnessChange = (val: number) => {
-    setBrightness(val);
-    nativeBridge.setBrightness(val);
-  };
-
-  const handleVolumeChange = (val: number) => {
-    setVolume(val);
-    nativeBridge.setVolume(val);
+  const handleToggleTorch = () => {
+    const on = nativeBridge.toggleFlashlight();
+    onActionTriggered("Flashlight Toggle", on ? "फ्लैशलाइट चालू (ON) की गई।" : "फ्लैशलाइट बंद (OFF) की गई।");
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-slate-950/95 backdrop-blur-2xl text-slate-100 p-4 overflow-y-auto animate-in fade-in slide-in-from-top-4 duration-200">
-      {/* Header */}
+    <div className="fixed inset-0 z-50 flex flex-col justify-start bg-slate-950/90 backdrop-blur-2xl animate-in slide-in-from-top duration-200 p-4">
       <div className="flex items-center justify-between pb-3 border-b border-white/10">
-        <div className="flex items-center gap-2">
-          <img src="./avatars/ic_launcher_round.png" alt="Myraa" className="w-5 h-5 rounded-full" />
-          <span className="font-bold text-sm tracking-wide text-slate-100">Android Quick Settings & Notifications</span>
+        <div>
+          <div className="text-sm font-bold text-white">Android Quick Settings & Notifications</div>
+          <div className="text-[10px] text-sky-400 font-mono">MYRAA System Shade • Shri Ram Nag</div>
         </div>
         <button
           onClick={onClose}
           type="button"
-          className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-slate-200 transition"
-          title="Close Shade"
+          className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 transition"
         >
           <X className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Sliders: Brightness & Volume */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 my-4">
-        <div className="flex items-center gap-3 p-3 bg-slate-900/80 rounded-xl border border-white/10">
-          <Sun className="w-4 h-4 text-amber-400 shrink-0" />
-          <div className="flex-1">
-            <div className="flex justify-between text-[10px] text-slate-400 mb-1">
-              <span>Screen Brightness</span>
-              <span>{brightness}%</span>
-            </div>
-            <input
-              type="range"
-              min="10"
-              max="100"
-              value={brightness}
-              onChange={(e) => handleBrightnessChange(Number(e.target.value))}
-              className="w-full accent-sky-500 cursor-pointer h-1.5 bg-slate-800 rounded-lg"
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3 p-3 bg-slate-900/80 rounded-xl border border-white/10">
-          <Volume2 className="w-4 h-4 text-sky-400 shrink-0" />
-          <div className="flex-1">
-            <div className="flex justify-between text-[10px] text-slate-400 mb-1">
-              <span>Media Volume</span>
-              <span>{volume}%</span>
-            </div>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={volume}
-              onChange={(e) => handleVolumeChange(Number(e.target.value))}
-              className="w-full accent-emerald-500 cursor-pointer h-1.5 bg-slate-800 rounded-lg"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Settings Grid */}
-      <div className="grid grid-cols-4 gap-2.5 mb-5">
+      {/* Quick Settings Tiles Grid */}
+      <div className="grid grid-cols-4 gap-2.5 my-4">
         <button
-          onClick={() => setWifiOn(!wifiOn)}
+          onClick={handleToggleTorch}
           type="button"
           className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition ${
-            wifiOn ? "bg-sky-500/20 border-sky-400 text-sky-300" : "bg-slate-900 border-white/10 text-slate-400"
-          }`}
-        >
-          <Wifi className="w-5 h-5 mb-1" />
-          <span className="text-[10px] font-medium">Wi-Fi</span>
-        </button>
-
-        <button
-          onClick={() => setBluetoothOn(!bluetoothOn)}
-          type="button"
-          className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition ${
-            bluetoothOn ? "bg-sky-500/20 border-sky-400 text-sky-300" : "bg-slate-900 border-white/10 text-slate-400"
-          }`}
-        >
-          <Bluetooth className="w-5 h-5 mb-1" />
-          <span className="text-[10px] font-medium">Bluetooth</span>
-        </button>
-
-        <button
-          onClick={handleToggleFlashlight}
-          type="button"
-          className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition ${
-            devState.flashlightOn ? "bg-amber-500/25 border-amber-400 text-amber-300 shadow-lg" : "bg-slate-900 border-white/10 text-slate-400"
+            dev.flashlightOn
+              ? "bg-amber-400 text-slate-950 border-amber-300 shadow-lg shadow-amber-400/20"
+              : "bg-slate-900 text-slate-300 border-white/10 hover:border-white/20"
           }`}
         >
           <Flashlight className="w-5 h-5 mb-1" />
-          <span className="text-[10px] font-medium">Torch {devState.flashlightOn ? "ON" : "OFF"}</span>
+          <span className="text-[10px] font-bold">Torch</span>
         </button>
 
         <button
-          onClick={() => setDndOn(!dndOn)}
           type="button"
-          className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition ${
-            dndOn ? "bg-purple-500/20 border-purple-400 text-purple-300" : "bg-slate-900 border-white/10 text-slate-400"
-          }`}
+          className="flex flex-col items-center justify-center p-3 rounded-2xl bg-sky-500/20 text-sky-400 border border-sky-500/30"
         >
-          <BellOff className="w-5 h-5 mb-1" />
-          <span className="text-[10px] font-medium">DND</span>
+          <Wifi className="w-5 h-5 mb-1" />
+          <span className="text-[10px] font-bold">Wi-Fi</span>
         </button>
 
         <button
-          onClick={() => setHotspotOn(!hotspotOn)}
           type="button"
-          className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition ${
-            hotspotOn ? "bg-emerald-500/20 border-emerald-400 text-emerald-300" : "bg-slate-900 border-white/10 text-slate-400"
-          }`}
+          className="flex flex-col items-center justify-center p-3 rounded-2xl bg-emerald-500/20 text-[#00E676] border border-emerald-500/30"
         >
-          <Radio className="w-5 h-5 mb-1" />
-          <span className="text-[10px] font-medium">Hotspot</span>
+          <Bluetooth className="w-5 h-5 mb-1" />
+          <span className="text-[10px] font-bold">Bluetooth</span>
         </button>
 
         <button
-          onClick={() => setBatterySaver(!batterySaver)}
           type="button"
-          className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition ${
-            batterySaver ? "bg-orange-500/20 border-orange-400 text-orange-300" : "bg-slate-900 border-white/10 text-slate-400"
-          }`}
+          className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-900 text-slate-300 border border-white/10"
         >
-          <BatteryCharging className="w-5 h-5 mb-1" />
-          <span className="text-[10px] font-medium">Saver</span>
-        </button>
-
-        <button
-          onClick={() => setAutoRotate(!autoRotate)}
-          type="button"
-          className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition ${
-            autoRotate ? "bg-indigo-500/20 border-indigo-400 text-indigo-300" : "bg-slate-900 border-white/10 text-slate-400"
-          }`}
-        >
-          <RotateCw className="w-5 h-5 mb-1" />
-          <span className="text-[10px] font-medium">Auto-Rotate</span>
-        </button>
-
-        <button
-          onClick={() => {
-            onActionTriggered("OPEN_SETTINGS", "Android Main Settings opened.");
-            onClose();
-          }}
-          type="button"
-          className="flex flex-col items-center justify-center p-3 rounded-2xl border bg-slate-900 border-white/10 text-slate-300 hover:bg-slate-800 transition"
-        >
-          <ShieldCheck className="w-5 h-5 mb-1 text-emerald-400" />
-          <span className="text-[10px] font-medium">Settings</span>
+          <Volume2 className="w-5 h-5 mb-1" />
+          <span className="text-[10px] font-bold">Sound</span>
         </button>
       </div>
 
-      {/* Notifications Section */}
-      <div className="flex-1">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-semibold text-slate-300 tracking-wide uppercase">Safe Notifications</span>
-          <span className="text-[10px] text-[#00E676] font-mono">MyraaNotificationService • Safe</span>
+      {/* Safe Notifications List */}
+      <div className="flex-1 overflow-y-auto space-y-2 mt-2">
+        <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+          Notifications (Payment & OTP Shield Active)
         </div>
 
-        <div className="space-y-2.5">
-          <div className="p-3 bg-slate-900/90 rounded-2xl border border-sky-500/30 shadow-md">
-            <div className="flex items-center justify-between mb-1">
-              <div className="flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-sky-400" />
-                <span className="font-bold text-xs text-sky-400">SHIV AI • MYRAA v3.0</span>
-              </div>
-              <span className="text-[9px] text-slate-400">Just now</span>
+        <div className="p-3 rounded-2xl bg-slate-900/80 border border-emerald-500/30 flex items-start gap-3">
+          <Shield className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+          <div>
+            <div className="text-xs font-bold text-white">Security Shield Engaged</div>
+            <div className="text-[11px] text-slate-300">
+              Payment & OTP Shield सक्रिय है। UPI/Banking ऐप्स पूर्णतः सुरक्षित हैं।
             </div>
-            <p className="text-[11px] text-slate-200">
-              नमस्ते श्री राम नाग जी! 3D होलोग्राफिक लिंक और सभी 11 टूल्स एक्टिव हैं।
-            </p>
           </div>
+        </div>
 
-          <div className="p-3 bg-slate-900/90 rounded-2xl border border-emerald-500/30 shadow-md">
-            <div className="flex items-center justify-between mb-1">
-              <div className="flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="font-bold text-xs text-emerald-400">AndroidKeyStore & OTP Shield</span>
-              </div>
-              <span className="text-[9px] text-slate-400">5m ago</span>
+        <div className="p-3 rounded-2xl bg-slate-900/80 border border-white/10 flex items-start gap-3">
+          <Smartphone className="w-5 h-5 text-sky-400 shrink-0 mt-0.5" />
+          <div>
+            <div className="text-xs font-bold text-white">Gemini Audio Voice Pipeline Online</div>
+            <div className="text-[11px] text-slate-300">
+              Kore, Aoede, Despina, Puck, Fenrir, और Charon वॉइस प्रोफाइल्स सक्रिय हैं।
             </div>
-            <p className="text-[11px] text-slate-200">
-              100% लोकल प्रोटेक्शन सक्रिय: क्लिपबोर्ड, बायोमेट्रिक व एसएमएस शील्ड सुरक्षित हैं।
-            </p>
           </div>
         </div>
       </div>

@@ -35,7 +35,6 @@ const STATE_BADGES: Record<TaskState, { bg: string; text: string; label: string 
 export const TaskMonitorHud: React.FC<Props> = ({ tasks }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const isEmergencyStop = agentSupervisor.isEmergencyStopActive();
-
   const activeTasks = tasks.filter(
     (t) => !["COMPLETED", "FAILED", "CANCELLED", "BLOCKED_BY_POLICY"].includes(t.state)
   );
@@ -62,87 +61,69 @@ export const TaskMonitorHud: React.FC<Props> = ({ tasks }) => {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Emergency Stop Toggle */}
-          <button
-            onClick={() => {
-              if (isEmergencyStop) {
-                agentSupervisor.resumeAgents();
-              } else {
-                agentSupervisor.emergencyStop();
-              }
-            }}
-            type="button"
-            className={`px-2.5 py-1 rounded-full text-[9px] font-bold transition flex items-center gap-1 border ${
-              isEmergencyStop
-                ? "bg-[#00E676] text-black border-[#00E676]"
-                : "bg-rose-600/30 text-rose-300 hover:bg-rose-600/50 border-rose-500/40"
-            }`}
-            title="Immediate emergency stop for all running agent executions"
-          >
-            <ShieldAlert className="w-3 h-3" />
-            {isEmergencyStop ? "Resume Agents" : "Emergency Stop"}
-          </button>
+          {/* Emergency Stop / Resume Toggle */}
+          {isEmergencyStop ? (
+            <button
+              onClick={() => agentSupervisor.resumeAgents()}
+              type="button"
+              className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold rounded-xl bg-emerald-500 text-slate-950 hover:bg-emerald-400 transition"
+            >
+              <Play className="w-3 h-3 fill-current" />
+              <span>Resume</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => agentSupervisor.emergencyStop()}
+              type="button"
+              className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold rounded-xl bg-rose-600/90 text-white hover:bg-rose-500 transition"
+            >
+              <Pause className="w-3 h-3" />
+              <span>HALT</span>
+            </button>
+          )}
 
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             type="button"
-            className="p-1 text-slate-300 hover:text-white rounded-lg bg-white/5 transition"
-            title="Expand / Collapse Task History"
+            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition"
           >
-            {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
         </div>
       </div>
 
-      {/* Expanded Task List Modal / Drawer */}
+      {/* Expanded Accordion Body */}
       {isExpanded && (
-        <div className="mt-2 p-3 rounded-2xl bg-slate-950/95 border border-white/10 shadow-2xl max-h-[260px] overflow-y-auto space-y-2 backdrop-blur-xl animate-in fade-in duration-150">
-          <div className="flex items-center justify-between text-[10px] text-slate-400 pb-1.5 border-b border-white/10">
-            <span>Recent Agent Supervised Tasks</span>
-            <span className="text-emerald-400 font-mono">100% Invariant Verification</span>
-          </div>
-
-          {tasks.length === 0 ? (
-            <div className="text-center py-4 text-xs text-slate-400">No tasks logged yet.</div>
-          ) : (
-            tasks.slice(0, 10).map((t) => {
-              const badge = STATE_BADGES[t.state] || STATE_BADGES.CREATED;
-              return (
-                <div
-                  key={t.taskId}
-                  className="p-2.5 rounded-xl bg-slate-900/80 border border-white/5 hover:border-white/15 transition text-[11px]"
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-semibold text-slate-200 truncate max-w-[240px]">
-                      {t.title}
-                    </span>
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[8px] font-bold border ${badge.bg} ${badge.text}`}
-                    >
-                      {badge.label}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-[9px] text-slate-400 mb-1.5">
-                    <span>Agent: <b className="text-slate-300">{t.activeAgentLabel}</b></span>
-                    <span>Role: <b className="text-sky-400">{t.avatarRole}</b></span>
-                    <span>{t.updatedAt}</span>
-                  </div>
-
-                  <div className="text-[10px] text-slate-300 bg-slate-950/60 p-1.5 rounded-lg border border-white/5 font-mono truncate">
-                    {t.currentStep}
-                  </div>
-
-                  {t.errors.length > 0 && (
-                    <div className="mt-1 text-[9px] text-rose-400 flex items-center gap-1">
-                      <AlertTriangle className="w-2.5 h-2.5" />
-                      <span>{t.errors[t.errors.length - 1]}</span>
-                    </div>
-                  )}
+        <div className="mt-2 p-2.5 rounded-2xl bg-slate-900/95 border border-white/10 backdrop-blur-xl shadow-2xl max-h-[220px] overflow-y-auto space-y-2">
+          {tasks.slice(0, 6).map((task) => {
+            const badge = STATE_BADGES[task.state] || STATE_BADGES.CREATED;
+            return (
+              <div
+                key={task.taskId}
+                className="p-2 rounded-xl bg-slate-950/70 border border-white/5 text-[10px]"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-bold text-slate-200 truncate max-w-[210px]">
+                    {task.title}
+                  </span>
+                  <span
+                    className={`px-1.5 py-0.5 rounded-md font-mono font-bold text-[8px] ${badge.bg} ${badge.text}`}
+                  >
+                    {badge.label}
+                  </span>
                 </div>
-              );
-            })
-          )}
+                <div className="text-[9px] text-slate-400 truncate">
+                  {task.activeAgentLabel} • {task.currentStep}
+                </div>
+                {task.verified && (
+                  <div className="flex items-center gap-1 mt-1 text-[8px] text-emerald-400 font-mono">
+                    <CheckCircle className="w-2.5 h-2.5" />
+                    <span>Invariant: Supervisor Verified Outcome</span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

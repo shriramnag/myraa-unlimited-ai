@@ -15,6 +15,9 @@ export const ROLE_THEMES: Record<CharacterRole, RoleTheme> = {
     closeupVideo: "./avatars/videos/myraa_closeup.mp4",
     fullVideo: "./avatars/videos/myraa_full.mp4",
     systemPersona: "Sweet, gentle anime heroine companion for Shri Ram Nag",
+    voiceName: "Kore",
+    voiceGender: "Female",
+    voiceDescription: "Kore (warm, expressive, companion natural tone)",
   },
   CODEX: {
     role: "CODEX",
@@ -28,6 +31,9 @@ export const ROLE_THEMES: Record<CharacterRole, RoleTheme> = {
     closeupVideo: "./avatars/videos/codex_closeup.mp4",
     fullVideo: "./avatars/videos/codex_full.mp4",
     systemPersona: "Precise, intelligent autonomous software engineering specialist",
+    voiceName: "Puck",
+    voiceGender: "Male",
+    voiceDescription: "Puck (sharp, fast, modern developer tone)",
   },
   AURA: {
     role: "AURA",
@@ -41,6 +47,9 @@ export const ROLE_THEMES: Record<CharacterRole, RoleTheme> = {
     closeupVideo: "./avatars/videos/aura_closeup.mp4",
     fullVideo: "./avatars/videos/aura_full.mp4",
     systemPersona: "Bright, creative and stylish anime companion",
+    voiceName: "Aoede",
+    voiceGender: "Female",
+    voiceDescription: "Aoede (melodious, gentle, calm tone)",
   },
   SENTINEL: {
     role: "SENTINEL",
@@ -54,6 +63,9 @@ export const ROLE_THEMES: Record<CharacterRole, RoleTheme> = {
     closeupVideo: "./avatars/videos/sentinel_closeup.mp4",
     fullVideo: "./avatars/videos/sentinel_full.mp4",
     systemPersona: "Vigilant cybersecurity and prompt injection guardian",
+    voiceName: "Fenrir",
+    voiceGender: "Male",
+    voiceDescription: "Fenrir (deep, commanding, authoritative tone)",
   },
   SAGE: {
     role: "SAGE",
@@ -67,6 +79,9 @@ export const ROLE_THEMES: Record<CharacterRole, RoleTheme> = {
     closeupVideo: "./avatars/videos/sage_closeup.mp4",
     fullVideo: "./avatars/videos/sage_full.mp4",
     systemPersona: "Scholarly, analytical deep research and intelligence specialist",
+    voiceName: "Charon",
+    voiceGender: "Male",
+    voiceDescription: "Charon (calm, intellectual, wise mentor tone)",
   },
   PIXEL: {
     role: "PIXEL",
@@ -80,6 +95,9 @@ export const ROLE_THEMES: Record<CharacterRole, RoleTheme> = {
     closeupVideo: "./avatars/videos/vortex_closeup.mp4",
     fullVideo: "./avatars/videos/vortex_full.mp4",
     systemPersona: "Dynamic media, slide deck, and UI graphics engineer",
+    voiceName: "Despina",
+    voiceGender: "Female",
+    voiceDescription: "Despina (energetic, dynamic, friendly tone)",
   },
 };
 
@@ -106,112 +124,120 @@ export const HolographicAvatarStage: React.FC<Props> = ({
   useEffect(() => {
     const vid = videoRef.current;
     if (!vid) return;
-
     if (isSpeaking) {
       vid.playbackRate = 1.15;
       vid.play().catch(() => {});
     } else {
       vid.pause();
-      vid.currentTime = 0.2; // Gentle idle frame
+      vid.currentTime = 0.2;
     }
   }, [isSpeaking, currentVideoSrc]);
 
   return (
     <div className="relative flex flex-col items-center justify-center w-full px-2 pt-2 select-none">
-      {/* Ambient Holographic Glow */}
+      {/* 3D Viewport Box */}
       <div
-        className="absolute inset-0 rounded-3xl opacity-25 blur-3xl pointer-events-none transition-colors duration-500"
-        style={{ background: theme.hex }}
-      />
-
-      {/* Main 3D Avatar Video Frame */}
-      <div className="relative group">
-        <video
-          ref={videoRef}
-          src={currentVideoSrc}
-          poster={theme.thumb}
-          loop
-          muted
-          playsInline
-          className="w-[250px] h-[310px] sm:w-[270px] sm:h-[340px] object-cover rounded-2xl border-2 transition-all duration-300 shadow-2xl bg-slate-950/80"
-          style={{
-            borderColor: theme.hex,
-            boxShadow: isSpeaking
-              ? `0 0 45px ${theme.hex}, 0 0 20px #00E676`
-              : `0 0 25px ${theme.hex}44`,
-          }}
+        className="relative w-full max-w-[390px] h-[260px] sm:h-[300px] rounded-3xl overflow-hidden border transition-all duration-500 shadow-2xl backdrop-blur-md flex items-center justify-center bg-slate-950/80"
+        style={{ borderColor: theme.hex }}
+      >
+        {/* Glow ambient background */}
+        <div
+          className="absolute inset-0 opacity-25 filter blur-2xl transition-all duration-700 pointer-events-none"
+          style={{ background: `radial-gradient(circle at 50% 50%, ${theme.hex}, transparent 75%)` }}
         />
 
-        {/* Dynamic Lip-Sync Waveform Badge (Visible while speaking) */}
-        {isSpeaking && (
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1 px-3 py-1 bg-black/85 border border-[#00E676] rounded-full backdrop-blur-md shadow-lg">
-            <Volume2 className="w-3 h-3 text-[#00E676] animate-pulse" />
-            <span className="text-[9px] font-bold text-[#00E676] mr-1">LIP-SYNC</span>
-            <span className="w-1 h-3 bg-[#00E676] rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-            <span className="w-1 h-4 bg-sky-400 rounded-full animate-bounce" style={{ animationDelay: "120ms" }} />
-            <span className="w-1 h-2 bg-[#00E676] rounded-full animate-bounce" style={{ animationDelay: "240ms" }} />
-            <span className="w-1 h-4 bg-sky-400 rounded-full animate-bounce" style={{ animationDelay: "80ms" }} />
-            <span className="w-1 h-2 bg-[#00E676] rounded-full animate-bounce" style={{ animationDelay: "180ms" }} />
-          </div>
-        )}
-
-        {/* Floating Top Badge with Camera Toggle */}
-        <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5">
-          <button
-            onClick={onToggleCameraMode}
-            type="button"
-            className="flex items-center gap-1 px-2.5 py-1 text-[9px] font-semibold bg-black/75 hover:bg-black/95 text-white rounded-full border border-white/20 backdrop-blur-sm transition-all shadow"
-            title="Toggle between Close-Up and Full-Body views"
-          >
-            <Camera className="w-2.5 h-2.5 text-sky-400" />
-            {cameraMode === "CLOSEUP" ? "Close-Up" : "Full-Body"}
-          </button>
+        {/* Video / Avatar Surface */}
+        <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
+          <video
+            ref={videoRef}
+            src={currentVideoSrc}
+            poster={theme.thumb}
+            playsInline
+            muted
+            loop
+            className={`w-full h-full object-cover transition-transform duration-300 ${
+              isSpeaking ? "scale-105" : "scale-100"
+            }`}
+          />
         </div>
-      </div>
 
-      {/* Role & Status Pill */}
-      <div className="flex items-center gap-2 mt-2">
-        <div
-          className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900/90 border text-[10px] font-medium shadow-md"
-          style={{ borderColor: theme.hex }}
+        {/* Top-Right: Camera Mode Toggle */}
+        <button
+          onClick={onToggleCameraMode}
+          type="button"
+          className="absolute top-2.5 right-2.5 z-20 p-2 rounded-full bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-white/10 transition shadow-lg flex items-center gap-1 text-[10px]"
+          title="Toggle Closeup / Full Viewport"
         >
-          <Sparkles className="w-3 h-3" style={{ color: theme.hex }} />
-          <span className="font-bold text-white">{theme.name}</span>
-          <span className="text-slate-400 text-[9px]">
-            • {isSpeaking ? "🗣️ Lip-Sync Speaking" : `[${cameraMode} • IDLE]`}
-          </span>
+          <Camera className="w-3.5 h-3.5" />
+          <span className="font-mono">{cameraMode}</span>
+        </button>
+
+        {/* Top-Left: Status & Gemini Voice Chip */}
+        <div className="absolute top-2.5 left-2.5 z-20 flex flex-col gap-1">
+          <div
+            className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold backdrop-blur-md border shadow-lg"
+            style={{
+              backgroundColor: "rgba(10, 15, 30, 0.8)",
+              borderColor: theme.hex,
+              color: theme.hex,
+            }}
+          >
+            <Sparkles className="w-3 h-3 animate-spin" style={{ animationDuration: "4s" }} />
+            <span>{isSpeaking ? "LIP-SYNC ACTIVE" : "HOLOGRAPHIC IDLE"}</span>
+          </div>
+
+          <div className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-mono bg-slate-900/80 text-emerald-400 border border-emerald-500/30">
+            <Volume2 className="w-2.5 h-2.5" />
+            <span>Gemini: {theme.voiceName} ({theme.voiceGender})</span>
+          </div>
+        </div>
+
+        {/* Bottom Banner */}
+        <div className="absolute bottom-0 left-0 right-0 z-20 p-2.5 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent flex items-center justify-between">
+          <div>
+            <div className="text-xs font-bold text-white flex items-center gap-1.5">
+              <span>{theme.name}</span>
+            </div>
+            <div className="text-[10px] text-slate-400">
+              {theme.hindiTitle} • {theme.voiceDescription}
+            </div>
+          </div>
+          <div className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-white/10 text-slate-200 border border-white/10">
+            {theme.badge}
+          </div>
         </div>
       </div>
 
-      {/* 6 Character Avatars Quick Switcher */}
-      <div className="flex items-center gap-1.5 mt-2.5 overflow-x-auto max-w-full px-1 py-1">
-        {(Object.keys(ROLE_THEMES) as CharacterRole[]).map((roleKey) => {
-          const t = ROLE_THEMES[roleKey];
-          const isSelected = activeRole === roleKey;
+      {/* Role Switcher Carousel */}
+      <div className="flex items-center justify-start sm:justify-center w-full max-w-[420px] gap-2 overflow-x-auto py-2.5 px-1 scrollbar-none">
+        {(Object.keys(ROLE_THEMES) as CharacterRole[]).map((role) => {
+          const item = ROLE_THEMES[role];
+          const isSelected = activeRole === role;
           return (
             <button
-              key={roleKey}
-              onClick={() => onSelectRole(roleKey)}
+              key={role}
+              onClick={() => onSelectRole(role)}
               type="button"
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-semibold transition-all whitespace-nowrap border ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-[11px] font-bold transition-all shrink-0 border ${
                 isSelected
-                  ? "bg-slate-900 text-white shadow-md scale-105"
-                  : "bg-slate-950/60 text-slate-400 hover:text-slate-200 hover:bg-slate-900/50 border-white/10"
+                  ? "bg-slate-900 text-white shadow-lg scale-105"
+                  : "bg-slate-950/80 text-slate-400 hover:text-white border-white/5"
               }`}
               style={{
-                borderColor: isSelected ? t.hex : undefined,
-                color: isSelected ? t.hex : undefined,
+                borderColor: isSelected ? item.hex : "rgba(255,255,255,0.08)",
+                boxShadow: isSelected ? `0 0 15px ${item.hex}40` : "none",
               }}
             >
               <img
-                src={t.thumb}
-                alt={t.badge}
-                className="w-3.5 h-3.5 rounded-full object-cover border border-white/20"
+                src={item.thumb}
+                alt={item.name}
+                className="w-4 h-4 rounded-full object-cover border border-white/20"
                 onError={(e) => {
                   (e.target as HTMLElement).style.display = "none";
                 }}
               />
-              <span>{t.badge}</span>
+              <span>{item.badge}</span>
+              <span className="text-[9px] opacity-75 font-mono">({item.voiceName})</span>
             </button>
           );
         })}

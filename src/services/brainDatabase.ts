@@ -14,10 +14,10 @@ const INITIAL_MEMORIES: BrainMemory[] = [
   {
     id: "mem-persona-02",
     category: "PREFERENCE",
-    key: "Persona & Voice Style",
-    content: "Warm, soft-spoken, high-pitched anime heroine companion voice (+25% pitch, 0.95x speed) with affectionate, caring, polite Hindi/Hinglish/English vocabulary.",
+    key: "Persona & Gemini Realistic Voice Mapping",
+    content: "Natural Google AI Studio voice engine: MYRAA (Kore), AURA (Aoede), PIXEL (Despina), CODEX (Puck), SENTINEL (Fenrir), SAGE (Charon).",
     timestamp: new Date().toLocaleDateString(),
-    tags: ["Voice", "Persona", "Anime"],
+    tags: ["Voice", "Persona", "Gemini Audio", "Kore", "Aoede", "Puck"],
   },
   {
     id: "mem-privacy-03",

@@ -1,18 +1,71 @@
-# 👑 SHIV AI — MYRAA v7.0.34 (निर्माण कर्ता एवं मालिक: श्री राम नाग | Nirman Karta & Supreme Malik: Shri Ram Nag)
+# 👑 SHIV AI — MYRAA (निर्माण कर्ता एवं मालिक: श्री राम नाग | Creator & Supreme Owner: Shri Ram Nag)
 
 **निर्माण कर्ता एवं सुप्रीम मालिक (Creator & Supreme Owner):** **Shri Ram Nag (श्री राम नाग)**  
-**Gradual Versioning:** `myraa-v7.0.34.apk` → `myraa-v7.0.35.apk` → `myraa-v7.0.36.apk` (Auto-incrementing on every build)
+**आर्किटेक्चर (Architecture):** 100% Native Android (Kotlin + Jetpack Compose + Material Design 3)  
+**वर्ज़न (Version):** `v7.0.36` (Code: 7036)  
 
 ---
 
-## 📥 1-Click Direct Android APK Download (100% Fixed `"App not installed."`)
+## 🌟 Overview & Key Features
 
-**क्यों आ रहा था `"App not installed."` और कैसे फिक्स हुआ?**
-1. **Google Play Protect (India) & Realme/OPPO Sideload Block:** भारत में Chrome से डाउनलोड किए गए किसी भी अनजान APK में अगर `BIND_ACCESSIBILITY_SERVICE`, `BIND_NOTIFICATION_LISTENER_SERVICE`, या `FOREGROUND_SERVICE_MICROPHONE` घोषित होता है, तो Play Protect और ColorOS उसे इनस्टॉल होते समय `"App not installed."` कहकर रोक देते हैं। अब `AndroidManifest.xml` से ये सभी sideload-blocker हटा दिए गए हैं।
-2. **2020-Dated Permanent V1+V2+V3 Certificate + `zipalign`:** वर्कस्पेस के अक्टूबर 2026 वाले सर्टिफिकेट के बजाय अब `2020-01-01` से वैध स्थायी **Shri Ram Nag** सर्टिफिकेट और `apksigner` V1+V2+V3 हस्ताक्षर लगाया गया है।
-3. **Gradual Versioning (`myraa-v7.0.34.apk`):** अब हर बिल्ड पर वर्ज़न धीरे-धीरे आगे बढ़ेगा (`v7.0.34`, `v7.0.35`, `v7.0.36`... और `versionCode` `7034+`)।
+MYRAA is a futuristic 3D Holographic AI Companion, Autonomous Android Automation Engine, and Long-Term Memory Hub engineered for **Shri Ram Nag**:
 
-### ⬇️ Direct Download Links:
-- 🟢 **[⬇️ Download `myraa-v7.0.34.apk` (Recommended — Play Protect Clean)](https://github.com/shriramnag/myraa-unlimited-ai/releases/latest/download/myraa-v7.0.34.apk)**
-- 🔵 **[⬇️ Download `myraa-latest.apk` (Always Latest Gradual Version)](https://github.com/shriramnag/myraa-unlimited-ai/releases/latest/download/myraa-latest.apk)**
-- 📦 **[Open GitHub Releases Page (`/releases`)](https://github.com/shriramnag/myraa-unlimited-ai/releases)**
+1. **3D Holographic Avatar Stage**:
+   - 6 Specialist Characters:
+     - 🌸 **MYRAA**: Voice Companion & Android Orchestration (Celestial Blue `#0A84FF`)
+     - 💻 **CODEX**: SWE-Agent Software Engineering & Bug Fixing (Emerald Green `#00E676`)
+     - ✨ **AURA**: Classic Blonde Companion & Creative Synthesis (Gold `#F59E0B`)
+     - 🛡️ **SENTINEL**: Cybersecurity Monitor & SkillSpector Shield (Crimson Red `#FF6B6B`)
+     - 🔬 **SAGE**: gpt-researcher Deep Research & Planning (Violet `#6C63FF`)
+     - 🎬 **PIXEL**: Media, Presentation & Video Specialist (Gold `#F59E0B`)
+   - Close-up & Full view modes with speaking pulse animation.
+
+2. **10-State Agent Supervisor Engine**:
+   - Full lifecycle management: `CREATED`, `PLANNING`, `AWAITING_APPROVAL`, `EXECUTING`, `VERIFYING`, `RECOVERING`, `COMPLETED`, `FAILED`, `CANCELLED`, `BLOCKED_BY_POLICY`.
+   - Invariant enforcement: Tasks cannot be marked `COMPLETED` without prior supervisor verification.
+   - Emergency Stop (HALT) and Resume controls.
+
+3. **Shiv-AI-Core (11 Autonomous Tools)**:
+   - `claude-mem`: Long-term memory and context compression
+   - `gsd-core`: Git. Ship. Done engineering workflow
+   - `Agent-Reach`: Multi-platform web research
+   - `no-ai-slop`: Humanize writing
+   - `ppt-master`: PowerPoint generator
+   - `video-use`: Video editing & FFmpeg automation
+   - `SkillSpector`: NVIDIA AI prompt injection scanner
+   - `AI-penetration-testing`: Security audit & penetration testing toolkit
+   - `SWE-agent`: Princeton NLP autonomous coding agent
+   - `huggingface_hub`: Open-source AI models & datasets
+   - `gpt-researcher`: Deep multi-source research synthesis
+
+4. **Long-Term On-Device Brain Database**:
+   - 100% Private on-device memory store (IDENTITY, PREFERENCE, FACT, PROJECT, HABIT, RELATIONSHIP).
+   - Instant search, add, delete, and JSON backup export/import.
+   - Pre-seeded with Shri Ram Nag's ownership profile.
+
+5. **43 Native Android System Actions & Hub**:
+   - Real hardware Torch/Flashlight toggle via `CameraManager`.
+   - Phone dialer & call launcher (`ACTION_DIAL`).
+   - SMS & WhatsApp message composer (`ACTION_SENDTO` / `ACTION_VIEW`).
+   - System settings (Wi-Fi, Bluetooth, Display, Battery, Storage, Accessibility).
+   - Maps & turn-by-turn navigation, YouTube, and Web search.
+
+6. **Admin Vault & Security Shield**:
+   - Master passcode protected (`1977` or `shriramnag`).
+   - Redacted audit log inspection with severity tags.
+   - Payment & OTP Shield (GPay, PhonePe, Paytm, Banking apps shielded).
+   - Voice Lock biometrics profile (~155Hz Shri Ram Nag).
+
+7. **Voice Engine & Audio Duet**:
+   - Android `TextToSpeech` with high-pitched anime companion pitch (+35%) and clear cadence.
+   - Speech-to-text recognition integration.
+
+---
+
+## 🏗️ Build & Compilation
+
+The project is structured with standard Android Gradle (Kotlin DSL):
+- Root: `build.gradle.kts`, `settings.gradle.kts`
+- Module: `app/build.gradle.kts`
+- Target SDK: 36, Min SDK: 24
+- Compiler: Java 17 / Kotlin 2.2 with Jetpack Compose BOM

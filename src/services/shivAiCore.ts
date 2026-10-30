@@ -16,11 +16,9 @@ export const SHIV_AI_11_TOOLS: ShivAiTool[] = [
 
 export async function executeShivAiTool(toolId: string, prompt: string): Promise<{ ok: boolean; tool: ShivAiTool; output: string }> {
   const tool = SHIV_AI_11_TOOLS.find((t) => t.id === toolId) || SHIV_AI_11_TOOLS[10];
-
-  // Simulated intelligent analysis & output based on tool capabilities
   const trimmed = prompt.trim() || `${tool.name} से विश्लेषण`;
-
   let responseBody = "";
+
   if (tool.id === "gpt-researcher" || tool.category === "RESEARCH") {
     responseBody = `🔬 [DEEP RESEARCH REPORT]\nविषय: ${trimmed}\n\n1. मुख्य निष्कर्ष: हमने बहु-स्रोतीय विश्लेषण से पाया कि यह क्षेत्र तीव्र गति से विकसित हो रहा है।\n2. तकनीकी विवरण: ऑन-डिवाइस सुरक्षा और स्थानीय एआई मॉडल्स का समन्वय बेहतर गोपनीयता प्रदान करता है।\n3. आगामी सुझाव: श्री राम नाग जी के मार्गदर्शन में आगे के चरण तय किए गए हैं।\n\n✓ सभी डेटा बिंदु सत्यापित हैं।`;
   } else if (tool.id === "SWE-agent" || tool.category === "CODING") {

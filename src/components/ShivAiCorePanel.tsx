@@ -58,86 +58,83 @@ export const ShivAiCorePanel: React.FC<Props> = ({ isOpen, onClose, onRunToolRes
 
         {/* Content Body */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {/* Prompt Input Box */}
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-semibold text-slate-300 flex items-center justify-between">
-              <span>रिसर्च या कोडिंग कमांड (Prompt):</span>
-              <span className="text-[9px] text-sky-400">टूल: {selectedTool.name}</span>
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={promptText}
-                onChange={(e) => setPromptText(e.target.value)}
-                placeholder={`उदा: '${selectedTool.name} से AI के भविष्य पर रिपोर्ट बनाओ'...`}
-                className="flex-1 px-3 py-2 bg-slate-950 border border-white/15 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleExecute();
-                }}
-              />
-              <button
-                onClick={handleExecute}
-                disabled={isRunning}
-                type="button"
-                className="px-4 py-2 bg-[#00E676] hover:bg-[#00E676]/90 disabled:opacity-50 text-slate-950 font-bold text-xs rounded-xl flex items-center gap-1.5 transition shadow-lg"
-              >
-                <Play className="w-3.5 h-3.5 fill-current" />
-                <span>{isRunning ? "चल रहा है..." : "चलाएं"}</span>
-              </button>
-            </div>
+          {/* Tools Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {SHIV_AI_11_TOOLS.map((t) => {
+              const isSelected = selectedTool.id === t.id;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => {
+                    setSelectedTool(t);
+                    setLastOutput(null);
+                  }}
+                  type="button"
+                  className={`p-2.5 rounded-2xl text-left border transition-all ${
+                    isSelected
+                      ? "bg-sky-500/20 border-sky-400 shadow-md shadow-sky-500/20"
+                      : "bg-slate-950/60 border-white/5 hover:border-white/20"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-base">{t.icon}</span>
+                    <span className="text-[9px] font-mono font-bold text-slate-400">
+                      #{t.index}
+                    </span>
+                  </div>
+                  <div className="text-xs font-bold text-white truncate">{t.name}</div>
+                  <div className="text-[9px] text-slate-400 truncate">{t.hindiDesc}</div>
+                </button>
+              );
+            })}
           </div>
 
-          {/* Last Output Banner */}
+          {/* Prompt & Run Input */}
+          <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-white/10 space-y-3">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-sky-400">
+                {selectedTool.name} ({selectedTool.category})
+              </span>
+              <span className="text-[10px] text-slate-400 font-mono">
+                {selectedTool.hindiDesc}
+              </span>
+            </div>
+
+            <input
+              type="text"
+              value={promptText}
+              onChange={(e) => setPromptText(e.target.value)}
+              placeholder={`निर्देश दें (उदा: '${selectedTool.name} से विश्लेषण व रिपोर्ट तैयार करें')...`}
+              className="w-full px-3 py-2 bg-slate-900 border border-white/15 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
+              onKeyDown={(e) => e.key === "Enter" && handleExecute()}
+            />
+
+            <button
+              onClick={handleExecute}
+              disabled={isRunning}
+              type="button"
+              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition disabled:opacity-50"
+            >
+              <Play className="w-3.5 h-3.5 fill-current" />
+              <span>{isRunning ? "निष्पादित हो रहा है..." : "टूल निष्पादित करें (Execute)"}</span>
+            </button>
+          </div>
+
+          {/* Last Output Viewer */}
           {lastOutput && (
-            <div className="p-3 bg-slate-950/90 rounded-2xl border border-[#00E676]/50 shadow-inner">
-              <div className="flex items-center justify-between text-[10px] font-bold text-[#00E676] mb-1.5">
-                <span>⚡ टूल आउटपुट: {lastOutput.tool.name}</span>
-                <span className="flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3" /> VERIFIED
+            <div className="p-3.5 rounded-2xl bg-slate-950 border border-emerald-500/40 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>आउटपुट रिपोर्ट: {lastOutput.tool.name}</span>
                 </span>
+                <span className="text-[9px] font-mono text-slate-400">COMPLETED & VERIFIED</span>
               </div>
-              <div className="text-xs text-slate-200 whitespace-pre-wrap font-mono leading-relaxed max-h-[160px] overflow-y-auto select-text pr-1">
+              <pre className="text-[11px] text-slate-200 font-mono whitespace-pre-wrap leading-relaxed max-h-[140px] overflow-y-auto">
                 {lastOutput.output}
-              </div>
+              </pre>
             </div>
           )}
-
-          {/* 11 Tools Grid */}
-          <div>
-            <div className="text-[11px] font-semibold text-slate-300 mb-2 flex items-center justify-between">
-              <span>उपलब्ध 11 ऑटोनॉमस टूल्स सूची:</span>
-              <span className="text-[9px] text-[#00E676]">🟢 ALL 11 READY</span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {SHIV_AI_11_TOOLS.map((t) => {
-                const isSelected = selectedTool.id === t.id;
-                return (
-                  <div
-                    key={t.id}
-                    onClick={() => setSelectedTool(t)}
-                    className={`p-2.5 rounded-xl border cursor-pointer transition flex flex-col justify-between ${
-                      isSelected
-                        ? "bg-slate-800 border-sky-400 shadow-lg"
-                        : "bg-slate-950/70 border-white/10 hover:border-white/20 hover:bg-slate-900/60"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-sm">{t.icon}</span>
-                        <span className="text-[11px] font-bold text-white">
-                          #{t.index} {t.name}
-                        </span>
-                      </div>
-                      <span className="text-[8px] font-mono px-1.5 py-0.5 rounded bg-white/10 text-slate-300">
-                        {t.category}
-                      </span>
-                    </div>
-                    <p className="text-[10px] text-slate-400 line-clamp-2">{t.hindiDesc}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
         </div>
       </div>
     </div>

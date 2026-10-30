@@ -58,49 +58,30 @@ export const BrainDatabasePanel: React.FC<Props> = ({ isOpen, onClose, onMemoryA
     a.download = `Myraa_BrainDB_Backup_${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    setStatusMsg("✓ 1-Click Brain DB Backup (.json) डाउनलोड हो गया!");
-    setTimeout(() => setStatusMsg(""), 4000);
+    setStatusMsg("✓ बैकअप JSON फाइल डाउनलोड हो गई!");
+    setTimeout(() => setStatusMsg(""), 3000);
   };
 
-  const handleImportBackup = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = event.target?.result as string;
-      const res = brainDatabase.importBackupJson(content);
-      if (res.ok) {
-        refreshList();
-        setStatusMsg(`✓ बैकअप से ${res.count} मेमोरीज़ रीस्टोर हो गईं!`);
-      } else {
-        setStatusMsg(`Error: ${res.error}`);
-      }
-      setTimeout(() => setStatusMsg(""), 4000);
-    };
-    reader.readAsText(file);
-  };
-
-  const filtered = memories.filter(
-    (m) =>
-      m.key.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      m.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      m.tags.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filtered = memories.filter((m) => {
+    const q = searchQuery.toLowerCase();
+    return (
+      m.key.toLowerCase().includes(q) ||
+      m.content.toLowerCase().includes(q) ||
+      m.category.toLowerCase().includes(q)
+    );
+  });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/80 backdrop-blur-xl animate-in fade-in duration-150">
-      <div className="w-full max-w-[520px] max-h-[85vh] flex flex-col bg-slate-900 border border-sky-500/40 rounded-3xl shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/85 backdrop-blur-xl animate-in fade-in duration-150">
+      <div className="w-full max-w-[500px] max-h-[85vh] flex flex-col bg-slate-900 border border-purple-500/40 rounded-3xl shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-slate-950/60">
+        <div className="flex items-center justify-between px-4 py-3 bg-slate-950/80 border-b border-white/10">
           <div className="flex items-center gap-2">
-            <Database className="w-5 h-5 text-sky-400" />
+            <Database className="w-5 h-5 text-purple-400" />
             <div>
-              <div className="text-sm font-bold text-slate-100">
-                लॉन्ग-टर्म ब्रेन डेटाबेस (Brain Database)
-              </div>
-              <div className="text-[10px] text-[#00E676] font-mono">
-                MyraaBrainDatabase_ShriRamNag • Dual-Layer (IndexedDB + Local)
+              <div className="text-sm font-bold text-white">लॉन्ग-टर्म ब्रेन डेटाबेस (Brain Database)</div>
+              <div className="text-[10px] text-purple-300 font-mono">
+                ओनर: श्री राम नाग • 100% On-Device Private
               </div>
             </div>
           </div>
@@ -113,101 +94,85 @@ export const BrainDatabasePanel: React.FC<Props> = ({ isOpen, onClose, onMemoryA
           </button>
         </div>
 
-        {/* Action Controls & Backup Row */}
-        <div className="p-3 bg-slate-950/40 border-b border-white/5 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setIsAdding(!isAdding)}
-              type="button"
-              className="px-3 py-1.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs rounded-xl flex items-center gap-1 transition"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>{isAdding ? "रद्द करें" : "नई मेमोरी जोड़ें"}</span>
-            </button>
-            <button
-              onClick={handleExportBackup}
-              type="button"
-              className="px-2.5 py-1.5 bg-white/10 hover:bg-white/20 text-slate-200 text-xs rounded-xl flex items-center gap-1 transition"
-              title="Export full JSON backup"
-            >
-              <Download className="w-3 h-3 text-emerald-400" />
-              <span>Backup DB</span>
-            </button>
-            <label className="px-2.5 py-1.5 bg-white/10 hover:bg-white/20 text-slate-200 text-xs rounded-xl flex items-center gap-1 transition cursor-pointer">
-              <Upload className="w-3 h-3 text-sky-400" />
-              <span>Restore DB</span>
-              <input
-                type="file"
-                accept=".json"
-                onChange={handleImportBackup}
-                className="hidden"
-              />
-            </label>
-          </div>
-
-          <div className="relative">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+        {/* Toolbar */}
+        <div className="p-3 border-b border-white/5 bg-slate-950/40 flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="मेमोरी खोजें..."
-              className="pl-8 pr-2 py-1 bg-slate-950 border border-white/10 rounded-lg text-xs text-white placeholder-slate-500 w-36 focus:w-44 transition-all focus:outline-none focus:border-sky-500"
+              className="w-full pl-8 pr-3 py-1.5 bg-slate-900 border border-white/10 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-500"
             />
           </div>
+          <button
+            onClick={() => setIsAdding(!isAdding)}
+            type="button"
+            className="px-2.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center gap-1 transition"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>{isAdding ? "रद्द" : "नया"}</span>
+          </button>
+          <button
+            onClick={handleExportBackup}
+            type="button"
+            className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-white/10 transition"
+            title="Export JSON Backup"
+          >
+            <Download className="w-4 h-4" />
+          </button>
         </div>
 
-        {/* Status Alert if any */}
         {statusMsg && (
-          <div className="mx-4 mt-2 px-3 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-[11px] text-emerald-300 flex items-center gap-1.5">
-            <Check className="w-3.5 h-3.5" />
-            <span>{statusMsg}</span>
+          <div className="px-4 py-1.5 text-xs text-emerald-400 bg-emerald-950/40 border-b border-emerald-500/20 font-medium">
+            {statusMsg}
           </div>
         )}
 
         {/* Add Memory Form */}
         {isAdding && (
-          <div className="p-4 mx-4 mt-2 bg-slate-950 rounded-2xl border border-sky-500/30 space-y-2">
+          <div className="p-3.5 bg-slate-950/90 border-b border-purple-500/30 space-y-2">
+            <div className="text-xs font-bold text-purple-300">नई मेमोरी दर्ज करें:</div>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={newKey}
                 onChange={(e) => setNewKey(e.target.value)}
-                placeholder="शीर्षक (Title, उदा: पसंदीदा संगीत)..."
-                className="flex-1 px-2.5 py-1.5 bg-slate-900 border border-white/10 rounded-lg text-xs text-white"
+                placeholder="शीर्षक (e.g. पसंद, प्रोजेक्ट, फैक्ट)..."
+                className="flex-1 px-3 py-1.5 bg-slate-900 border border-white/10 rounded-lg text-xs text-white placeholder-slate-500"
               />
               <select
                 value={newCategory}
                 onChange={(e) => setNewCategory(e.target.value as any)}
-                className="px-2 py-1.5 bg-slate-900 border border-white/10 rounded-lg text-xs text-white"
+                className="px-2 py-1.5 bg-slate-900 border border-white/10 rounded-lg text-xs text-purple-300"
               >
                 <option value="FACT">FACT</option>
                 <option value="IDENTITY">IDENTITY</option>
                 <option value="PREFERENCE">PREFERENCE</option>
                 <option value="PROJECT">PROJECT</option>
                 <option value="HABIT">HABIT</option>
-                <option value="RELATIONSHIP">RELATIONSHIP</option>
               </select>
             </div>
             <textarea
-              rows={2}
               value={newContent}
               onChange={(e) => setNewContent(e.target.value)}
-              placeholder="विस्तार से विवरण लिखें जो MYRAA हमेशा याद रखेगी..."
-              className="w-full px-2.5 py-1.5 bg-slate-900 border border-white/10 rounded-lg text-xs text-white"
+              placeholder="मेमोरी का पूरा विवरण..."
+              rows={2}
+              className="w-full px-3 py-1.5 bg-slate-900 border border-white/10 rounded-lg text-xs text-white placeholder-slate-500 resize-none"
             />
             <div className="flex items-center justify-between">
               <input
                 type="text"
                 value={newTags}
                 onChange={(e) => setNewTags(e.target.value)}
-                placeholder="टैग्स (कॉमा से अलग, उदा: Music, Daily)"
-                className="flex-1 mr-2 px-2.5 py-1.5 bg-slate-900 border border-white/10 rounded-lg text-xs text-white"
+                placeholder="टैग्स (कॉमा से अलग करें)..."
+                className="flex-1 mr-2 px-3 py-1.5 bg-slate-900 border border-white/10 rounded-lg text-xs text-white placeholder-slate-500"
               />
               <button
                 onClick={handleAdd}
                 type="button"
-                className="px-3 py-1.5 bg-[#00E676] text-black font-bold text-xs rounded-lg"
+                className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition"
               >
                 सेव करें
               </button>
@@ -215,48 +180,46 @@ export const BrainDatabasePanel: React.FC<Props> = ({ isOpen, onClose, onMemoryA
           </div>
         )}
 
-        {/* Memory Items List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
-          {filtered.length === 0 ? (
-            <div className="text-center py-6 text-xs text-slate-500">
-              कोई मेमोरी नहीं मिली।
-            </div>
-          ) : (
-            filtered.map((m) => (
-              <div
-                key={m.id}
-                className="p-3 bg-slate-950/70 border border-white/10 rounded-2xl hover:border-white/20 transition flex flex-col justify-between"
-              >
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-400 border border-sky-500/30">
-                      {m.category}
-                    </span>
-                    <span className="text-xs font-bold text-slate-200">{m.key}</span>
-                  </div>
+        {/* List of Memories */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
+          {filtered.map((m) => (
+            <div
+              key={m.id}
+              className="p-3 rounded-2xl bg-slate-950/70 border border-white/5 hover:border-white/15 transition space-y-1"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-md text-[9px] font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                    {m.category}
+                  </span>
+                  <span className="text-xs font-bold text-white">{m.key}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[9px] text-slate-500 font-mono">{m.timestamp}</span>
                   <button
                     onClick={() => handleDelete(m.id)}
                     type="button"
                     className="p-1 text-slate-500 hover:text-rose-400 transition"
-                    title="Delete Memory"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-3 h-3" />
                   </button>
                 </div>
-                <p className="text-xs text-slate-300 leading-relaxed mb-2 select-text">{m.content}</p>
-                <div className="flex items-center justify-between text-[9px] text-slate-500">
-                  <div className="flex gap-1 flex-wrap">
-                    {m.tags.map((t, idx) => (
-                      <span key={idx} className="px-1.5 py-0.5 rounded bg-white/5 text-slate-400">
-                        #{t}
-                      </span>
-                    ))}
-                  </div>
-                  <span>{m.timestamp}</span>
-                </div>
               </div>
-            ))
-          )}
+              <div className="text-[11px] text-slate-300 leading-relaxed">{m.content}</div>
+              {m.tags && m.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1 pt-1">
+                  {m.tags.map((tag, idx) => (
+                    <span
+                      key={idx}
+                      className="text-[8px] font-mono text-slate-400 px-1.5 py-0.2 rounded bg-white/5"
+                    >
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </div>
     </div>
