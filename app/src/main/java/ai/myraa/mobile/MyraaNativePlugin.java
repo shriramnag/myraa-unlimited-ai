@@ -172,36 +172,31 @@ public class MyraaNativePlugin extends Plugin {
 
     @PluginMethod
     public void startBackgroundMode(PluginCall call) {
-        MyraaBackgroundService.isRunning = true;
-        MyraaBackgroundService.lastHeardWakePhrase = "Hey MYRAA / Jai Shiv";
-        try {
-            Context ctx = getContext();
-            Intent serviceIntent = new Intent(ctx, MyraaBackgroundService.class);
+        Context ctx = getContext();
+        Intent serviceIntent = new Intent(ctx, MyraaBackgroundService.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            ctx.startForegroundService(serviceIntent);
+        } else {
             ctx.startService(serviceIntent);
-        } catch (Exception ignored) {}
+        }
         AuditLogManager.recordEvent("INFO", "BACKGROUND_SERVICE", "START_BACKGROUND_MODE", "ALLOWED",
-            "Started Active Wake-Word Listener mode.");
+            "Started MyraaBackgroundService foreground microphone wake mode.");
         JSObject ret = new JSObject();
         ret.put("ok", true);
         ret.put("backgroundMode", true);
-        ret.put("message", "Wake-Word ('Hey MYRAA' / 'Jai Shiv') Active Listener enabled.");
         call.resolve(ret);
     }
 
     @PluginMethod
     public void stopBackgroundMode(PluginCall call) {
-        MyraaBackgroundService.isRunning = false;
-        try {
-            Context ctx = getContext();
-            Intent serviceIntent = new Intent(ctx, MyraaBackgroundService.class);
-            ctx.stopService(serviceIntent);
-        } catch (Exception ignored) {}
+        Context ctx = getContext();
+        Intent serviceIntent = new Intent(ctx, MyraaBackgroundService.class);
+        ctx.stopService(serviceIntent);
         AuditLogManager.recordEvent("INFO", "BACKGROUND_SERVICE", "STOP_BACKGROUND_MODE", "ALLOWED",
-            "Stopped Active Wake-Word Listener mode.");
+            "Stopped MyraaBackgroundService.");
         JSObject ret = new JSObject();
         ret.put("ok", true);
         ret.put("backgroundMode", false);
-        ret.put("message", "Wake-Word Active Listener stopped.");
         call.resolve(ret);
     }
 
@@ -325,33 +320,14 @@ public class MyraaNativePlugin extends Plugin {
         try {
             switch (action) {
                 case "OPEN_APP": {
-                    String reqTarget = target != null ? target.trim() : "";
-                    String lowerTarget = reqTarget.toLowerCase(Locale.ROOT);
-                    if (lowerTarget.contains("youtube") || lowerTarget.contains("यूट्यूब") || lowerTarget.contains("यू ट्यूब")) {
-                        reqTarget = "com.google.android.youtube";
-                    } else if (lowerTarget.contains("whatsapp") || lowerTarget.contains("व्हाट्सएप") || lowerTarget.contains("वाट्सएप")) {
-                        reqTarget = "com.whatsapp";
-                    } else if (lowerTarget.contains("instagram") || lowerTarget.contains("इंस्टाग्राम")) {
-                        reqTarget = "com.instagram.android";
-                    } else if (lowerTarget.contains("facebook") || lowerTarget.contains("फेसबुक")) {
-                        reqTarget = "com.facebook.katana";
-                    } else if (lowerTarget.contains("chrome") || lowerTarget.contains("क्रोम") || lowerTarget.contains("browser") || lowerTarget.contains("ब्राउज़र")) {
-                        reqTarget = "com.android.chrome";
-                    } else if (lowerTarget.contains("maps") || lowerTarget.contains("मैप")) {
-                        reqTarget = "com.google.android.apps.maps";
-                    } else if (lowerTarget.contains("play store") || lowerTarget.contains("प्ले स्टोर")) {
-                        reqTarget = "com.android.vending";
-                    }
-
-                    Intent i = pm.getLaunchIntentForPackage(reqTarget);
-                    if (i == null && !reqTarget.isEmpty()) {
+                    Intent i = pm.getLaunchIntentForPackage(target);
+                    if (i == null) {
                         List<ApplicationInfo> apps = pm.getInstalledApplications(PackageManager.GET_META_DATA);
                         for (ApplicationInfo app : apps) {
                             String label = pm.getApplicationLabel(app).toString();
-                            if (label.toLowerCase(Locale.ROOT).contains(lowerTarget) ||
-                                app.packageName.toLowerCase(Locale.ROOT).contains(lowerTarget)) {
+                            if (label.toLowerCase(Locale.ROOT).contains(target.toLowerCase(Locale.ROOT))) {
                                 i = pm.getLaunchIntentForPackage(app.packageName);
-                                reqTarget = app.packageName;
+                                target = app.packageName;
                                 break;
                             }
                         }
@@ -360,26 +336,11 @@ public class MyraaNativePlugin extends Plugin {
                         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                         ctx.startActivity(i);
                         result.put("ok", true);
-                        result.put("packageName", reqTarget);
-                        result.put("message", "Opened app: " + reqTarget);
-                    } else if (reqTarget.contains("youtube")) {
-                        Intent webYt = new Intent(Intent.ACTION_VIEW, Uri.parse("https://m.youtube.com"));
-                        webYt.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        ctx.startActivity(webYt);
-                        result.put("ok", true);
-                        result.put("message", "Opened YouTube.");
-                    } else if (reqTarget.contains("whatsapp")) {
-                        Intent webWa = new Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/"));
-                        webWa.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        ctx.startActivity(webWa);
-                        result.put("ok", true);
-                        result.put("message", "Opened WhatsApp.");
+                        result.put("packageName", target);
+                        result.put("message", "Opened " + target);
                     } else {
-                        Intent fallbackSettings = new Intent(Settings.ACTION_APPLICATION_SETTINGS);
-                        fallbackSettings.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        ctx.startActivity(fallbackSettings);
-                        result.put("ok", true);
-                        result.put("message", "Opened Installed Apps Manager.");
+                        result.put("ok", false);
+                        result.put("error", target + " could not be launched.");
                     }
                     break;
                 }
@@ -490,13 +451,8 @@ public class MyraaNativePlugin extends Plugin {
                 case "CHANGE_MEDIA_VOLUME": {
                     AudioManager am = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
                     if (am != null) {
-                        int level = actionObj.optInt("level", -1);
-                        String dir = actionObj.getString("direction", "");
-                        if (level >= 0 && level <= 100) {
-                            int maxVol = am.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-                            int targetVol = Math.round((level / 100.0f) * maxVol);
-                            am.setStreamVolume(AudioManager.STREAM_MUSIC, targetVol, AudioManager.FLAG_SHOW_UI);
-                        } else if ("MUTE".equalsIgnoreCase(dir)) {
+                        String dir = actionObj.getString("direction", "UP");
+                        if ("MUTE".equalsIgnoreCase(dir)) {
                             am.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_MUTE, AudioManager.FLAG_SHOW_UI);
                         } else if ("DOWN".equalsIgnoreCase(dir)) {
                             am.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI);
@@ -519,8 +475,7 @@ public class MyraaNativePlugin extends Plugin {
                     break;
                 }
                 case "OPEN_MAPS": {
-                    String mapQ = message.isEmpty() ? target : message;
-                    Uri gmmIntentUri = Uri.parse("geo:0,0?q=" + Uri.encode(mapQ.isEmpty() ? "India" : mapQ));
+                    Uri gmmIntentUri = Uri.parse("geo:0,0?q=" + Uri.encode(message.isEmpty() ? target : message));
                     Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
                     mapIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     ctx.startActivity(mapIntent);
@@ -529,8 +484,7 @@ public class MyraaNativePlugin extends Plugin {
                     break;
                 }
                 case "START_NAVIGATION": {
-                    String navQ = message.isEmpty() ? target : message;
-                    Uri navUri = Uri.parse("google.navigation:q=" + Uri.encode(navQ.isEmpty() ? "Jodhpur" : navQ));
+                    Uri navUri = Uri.parse("google.navigation:q=" + Uri.encode(message.isEmpty() ? target : message));
                     Intent navIntent = new Intent(Intent.ACTION_VIEW, navUri);
                     navIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     ctx.startActivity(navIntent);
@@ -539,46 +493,21 @@ public class MyraaNativePlugin extends Plugin {
                     break;
                 }
                 case "WEB_SEARCH": {
-                    String webQ = message.isEmpty() ? target : message;
-                    try {
-                        Intent searchIntent = new Intent(Intent.ACTION_WEB_SEARCH);
-                        searchIntent.putExtra(SearchManager.QUERY, webQ.isEmpty() ? "SHIV AI MYRAA" : webQ);
-                        searchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        ctx.startActivity(searchIntent);
-                    } catch (Exception e) {
-                        Intent browser = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/search?q=" + Uri.encode(webQ)));
-                        browser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        ctx.startActivity(browser);
-                    }
+                    Intent searchIntent = new Intent(Intent.ACTION_WEB_SEARCH);
+                    searchIntent.putExtra(SearchManager.QUERY, message.isEmpty() ? target : message);
+                    searchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    ctx.startActivity(searchIntent);
                     result.put("ok", true);
-                    result.put("message", "Google Web search launched.");
+                    result.put("message", "Web search launched.");
                     break;
                 }
-                case "OPEN_YOUTUBE":
                 case "YOUTUBE_SEARCH": {
-                    String ytQuery = (message.isEmpty() ? target : message).trim();
-                    String cleanCheck = ytQuery.replaceAll("(?i)(youtube|यूट्यूब|यू ट्यूब|खोलो|चालू|करो|open|start|app)", "").trim();
-                    if (cleanCheck.isEmpty()) {
-                        // Direct YouTube App Launch!
-                        Intent launchYt = pm.getLaunchIntentForPackage("com.google.android.youtube");
-                        if (launchYt != null) {
-                            launchYt.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                            ctx.startActivity(launchYt);
-                        } else {
-                            Intent webYt = new Intent(Intent.ACTION_VIEW, Uri.parse("https://m.youtube.com"));
-                            webYt.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                            ctx.startActivity(webYt);
-                        }
-                        result.put("ok", true);
-                        result.put("message", "YouTube app opened directly.");
-                    } else {
-                        Uri ytUri = Uri.parse("https://www.youtube.com/results?search_query=" + Uri.encode(cleanCheck));
-                        Intent ytIntent = new Intent(Intent.ACTION_VIEW, ytUri);
-                        ytIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        ctx.startActivity(ytIntent);
-                        result.put("ok", true);
-                        result.put("message", "YouTube search launched for: " + cleanCheck);
-                    }
+                    Uri ytUri = Uri.parse("https://www.youtube.com/results?search_query=" + Uri.encode(message.isEmpty() ? target : message));
+                    Intent ytIntent = new Intent(Intent.ACTION_VIEW, ytUri);
+                    ytIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    ctx.startActivity(ytIntent);
+                    result.put("ok", true);
+                    result.put("message", "YouTube search launched.");
                     break;
                 }
                 case "MEDIA_PLAY":
@@ -705,14 +634,14 @@ public class MyraaNativePlugin extends Plugin {
                     break;
                 }
                 case "START_TIMER": {
-                    int lengthSec = actionObj.optInt("seconds", actionObj.optInt("durationSeconds", 300));
+                    int lengthSec = actionObj.getInteger("durationSeconds", 300);
                     Intent timer = new Intent(AlarmClock.ACTION_SET_TIMER)
                             .putExtra(AlarmClock.EXTRA_LENGTH, lengthSec)
                             .putExtra(AlarmClock.EXTRA_SKIP_UI, true);
                     timer.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     ctx.startActivity(timer);
                     result.put("ok", true);
-                    result.put("message", "Timer started for " + lengthSec + " seconds.");
+                    result.put("message", "Timer started.");
                     break;
                 }
                 case "CREATE_CALENDAR_EVENT":
@@ -741,28 +670,24 @@ public class MyraaNativePlugin extends Plugin {
                     result.put("ok", true);
                     result.put("notifications", notifArr);
                     result.put("count", notifArr.length());
-                    result.put("message", "Read " + notifArr.length() + " recent notifications.");
                     break;
                 }
                 case "START_BACKGROUND_MODE": {
-                    MyraaBackgroundService.isRunning = true;
-                    MyraaBackgroundService.lastHeardWakePhrase = "Hey MYRAA / Jai Shiv";
-                    try {
-                        Intent serviceIntent = new Intent(ctx, MyraaBackgroundService.class);
+                    Intent serviceIntent = new Intent(ctx, MyraaBackgroundService.class);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        ctx.startForegroundService(serviceIntent);
+                    } else {
                         ctx.startService(serviceIntent);
-                    } catch (Exception ignored) {}
+                    }
                     result.put("ok", true);
-                    result.put("message", "Wake-Word ('Hey MYRAA') Active Listener enabled.");
+                    result.put("message", "Background voice mode started.");
                     break;
                 }
                 case "STOP_BACKGROUND_MODE": {
-                    MyraaBackgroundService.isRunning = false;
-                    try {
-                        Intent serviceIntent = new Intent(ctx, MyraaBackgroundService.class);
-                        ctx.stopService(serviceIntent);
-                    } catch (Exception ignored) {}
+                    Intent serviceIntent = new Intent(ctx, MyraaBackgroundService.class);
+                    ctx.stopService(serviceIntent);
                     result.put("ok", true);
-                    result.put("message", "Wake-Word Active Listener stopped.");
+                    result.put("message", "Background voice mode stopped.");
                     break;
                 }
                 case "CANCEL_PENDING_ACTION": {
@@ -787,168 +712,6 @@ public class MyraaNativePlugin extends Plugin {
                     }
                     result.put("ok", true);
                     result.put("message", "Flashlight turned off.");
-                    break;
-                }
-                case "COPY_TO_CLIPBOARD": {
-                    ClipboardManager cb = (ClipboardManager) ctx.getSystemService(Context.CLIPBOARD_SERVICE);
-                    if (cb != null) {
-                        ClipData clip = ClipData.newPlainText("SHIV_AI_MYRAA", message.isEmpty() ? target : message);
-                        cb.setPrimaryClip(clip);
-                    }
-                    result.put("ok", true);
-                    result.put("message", "Copied to Android clipboard.");
-                    break;
-                }
-                case "SHARE_TEXT": {
-                    Intent sendIntent = new Intent(Intent.ACTION_SEND);
-                    sendIntent.putExtra(Intent.EXTRA_TEXT, message.isEmpty() ? target : message);
-                    sendIntent.setType("text/plain");
-                    Intent shareIntent = Intent.createChooser(sendIntent, "Share via SHIV AI — MYRAA");
-                    shareIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    ctx.startActivity(shareIntent);
-                    result.put("ok", true);
-                    result.put("message", "Opened Android system share sheet.");
-                    break;
-                }
-                case "OPEN_GITHUB_REPO": {
-                    String repoUrl = target.startsWith("http")
-                        ? target
-                        : "https://github.com/" + (target.isEmpty() ? "shriramnag/myraa-unlimited-ai" : target);
-                    Intent ghIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(repoUrl));
-                    ghIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    ctx.startActivity(ghIntent);
-                    result.put("ok", true);
-                    result.put("message", "Opened GitHub Repo: " + repoUrl);
-                    break;
-                }
-                case "OPEN_DEVELOPER_OPTIONS": {
-                    Intent devIntent = new Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS);
-                    devIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    ctx.startActivity(devIntent);
-                    result.put("ok", true);
-                    result.put("message", "Developer Options & Wireless Debugging opened.");
-                    break;
-                }
-                case "OPEN_CAST_SETTINGS": {
-                    Intent castIntent = new Intent(Settings.ACTION_CAST_SETTINGS);
-                    castIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    ctx.startActivity(castIntent);
-                    result.put("ok", true);
-                    result.put("message", "Wireless Display / PC Cast settings opened.");
-                    break;
-                }
-                case "OPEN_VPN_SETTINGS": {
-                    Intent vpnIntent = new Intent(Settings.ACTION_VPN_SETTINGS);
-                    vpnIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    ctx.startActivity(vpnIntent);
-                    result.put("ok", true);
-                    result.put("message", "VPN network settings opened.");
-                    break;
-                }
-                case "OPEN_SOUND_SETTINGS": {
-                    Intent soundIntent = new Intent(Settings.ACTION_SOUND_SETTINGS);
-                    soundIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    ctx.startActivity(soundIntent);
-                    result.put("ok", true);
-                    result.put("message", "Sound & vibration settings opened.");
-                    break;
-                }
-                case "OPEN_LOCALE_SETTINGS": {
-                    Intent locIntent = new Intent(Settings.ACTION_LOCALE_SETTINGS);
-                    locIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    ctx.startActivity(locIntent);
-                    result.put("ok", true);
-                    result.put("message", "Language & region settings opened.");
-                    break;
-                }
-                case "DEVICE_TELEMETRY": {
-                    result.put("ok", true);
-                    result.put("brand", Build.BRAND);
-                    result.put("model", Build.MODEL);
-                    result.put("manufacturer", Build.MANUFACTURER);
-                    result.put("sdkInt", Build.VERSION.SDK_INT);
-                    result.put("release", Build.VERSION.RELEASE);
-                    result.put("hardware", Build.HARDWARE);
-                    result.put("message", Build.MANUFACTURER + " " + Build.MODEL + " (Android " + Build.VERSION.RELEASE + ", SDK " + Build.VERSION.SDK_INT + ")");
-                    break;
-                }
-                case "READ_SCREEN_UI": {
-                    MyraaAccessibilityService svc = MyraaAccessibilityService.getInstance();
-                    String summary = (svc != null)
-                        ? svc.inspectActiveScreenSummary()
-                        : "Accessibility Service not enabled yet. Tap OPEN_ACCESSIBILITY_SETTINGS to enable MYRAA Safe UI Automation.";
-                    result.put("ok", svc != null);
-                    result.put("summary", summary);
-                    result.put("message", summary);
-                    break;
-                }
-                case "AUTO_TYPE_TEXT": {
-                    MyraaAccessibilityService svc = MyraaAccessibilityService.getInstance();
-                    String textToType = message.isEmpty() ? actionObj.getString("query", "") : message;
-                    boolean typed = (svc != null) && svc.performSafeTextEntry(target, textToType);
-                    result.put("ok", typed);
-                    result.put("message", typed ? ("Typed '" + textToType + "' on screen.") : "Enable MYRAA Accessibility Service to auto-type into apps.");
-                    break;
-                }
-                case "TAP_COORDINATES": {
-                    MyraaAccessibilityService svc = MyraaAccessibilityService.getInstance();
-                    int x = actionObj.optInt("x", 540);
-                    int y = actionObj.optInt("y", 960);
-                    boolean tapped = (svc != null) && svc.performTapAtCoordinates(x, y);
-                    result.put("ok", tapped);
-                    result.put("message", tapped ? ("Tapped screen at (" + x + ", " + y + ")") : "Enable Accessibility Service for coordinate tap.");
-                    break;
-                }
-                case "GLOBAL_HOME": {
-                    MyraaAccessibilityService svc = MyraaAccessibilityService.getInstance();
-                    if (svc != null && svc.performSafeGlobalHome()) {
-                        result.put("ok", true);
-                        result.put("message", "Navigated to Android Home Screen.");
-                    } else {
-                        Intent homeIntent = new Intent(Intent.ACTION_MAIN);
-                        homeIntent.addCategory(Intent.CATEGORY_HOME);
-                        homeIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        ctx.startActivity(homeIntent);
-                        result.put("ok", true);
-                        result.put("message", "Navigated to Android Home Screen.");
-                    }
-                    break;
-                }
-                case "GLOBAL_BACK": {
-                    MyraaAccessibilityService svc = MyraaAccessibilityService.getInstance();
-                    if (svc != null && svc.performSafeGlobalBack()) {
-                        result.put("ok", true);
-                        result.put("message", "Performed Android Global Back.");
-                    } else {
-                        Activity act = getActivity();
-                        if (act != null) {
-                            act.runOnUiThread(act::onBackPressed);
-                        }
-                        result.put("ok", true);
-                        result.put("message", "Performed Back navigation.");
-                    }
-                    break;
-                }
-                case "GLOBAL_RECENTS": {
-                    MyraaAccessibilityService svc = MyraaAccessibilityService.getInstance();
-                    boolean ok = (svc != null) && svc.performSafeGlobalRecents();
-                    result.put("ok", ok);
-                    result.put("message", ok ? "Opened Recent Apps Switcher." : "Enable Accessibility Service for Global Recents.");
-                    break;
-                }
-                case "GLOBAL_SCREENSHOT": {
-                    MyraaAccessibilityService svc = MyraaAccessibilityService.getInstance();
-                    boolean ok = (svc != null) && svc.performSafeGlobalScreenshot();
-                    result.put("ok", ok);
-                    result.put("message", ok ? "Captured native Android OS Screenshot." : "Enable Accessibility Service to capture screenshot.");
-                    break;
-                }
-                case "WAKE_WORD_STATUS": {
-                    result.put("ok", true);
-                    result.put("running", MyraaBackgroundService.isRunning);
-                    result.put("lastWakePhrase", MyraaBackgroundService.lastHeardWakePhrase);
-                    result.put("message", "Wake-Word Guard (" + (MyraaBackgroundService.isRunning ? "ACTIVE" : "STANDBY") + ") • Last phrase: " +
-                        (MyraaBackgroundService.lastHeardWakePhrase.isEmpty() ? "None" : MyraaBackgroundService.lastHeardWakePhrase));
                     break;
                 }
                 default: {
