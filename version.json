@@ -3,15 +3,15 @@
   "primaryAiName": "SHIV AI",
   "packageName": "ai.shriramnag.myraa",
   "owner": "Shri Ram Nag (श्री राम नाग)",
-  "version": "v7.0.36",
-  "versionCode": 7036,
-  "versioningRule": "Gradual step versioning: increments automatically on every build (myraa-v7.0.34.apk, myraa-v7.0.35.apk, myraa-v7.0.36.apk...)",
+  "version": "v7.0.37",
+  "versionCode": 7037,
+  "versioningRule": "Gradual step versioning: increments automatically on every build (myraa-v7.0.35.apk, myraa-v7.0.36.apk, myraa-v7.0.37.apk...)",
   "releaseDate": "2026-10-30",
   "freeForever": true,
   "localOnlyPrivacy": true,
-  "apkUrl": "https://github.com/shriramnag/myraa-unlimited-ai/releases/latest/download/myraa-v7.0.36.apk",
+  "apkUrl": "https://github.com/shriramnag/myraa-unlimited-ai/releases/latest/download/myraa-v7.0.37.apk",
   "fallbackReleaseUrl": "https://github.com/shriramnag/myraa-unlimited-ai/releases/latest/download/myraa-latest.apk",
   "coreRepoUrl": "https://github.com/shriramnag/myraa-unlimited-ai",
   "mandatory": false,
-  "changelog": "v7.0.36 Update: Integrated 4-Tier Non-Robotic Google Realistic Voice Architecture (Gemini 2.5 Flash Native Audio TTS REST + Google Cloud Neural2/WaveNet/Journey TTS + Gemini Multimodal Live 24kHz Audio + Natural Cloud Neural Stream), Text Normalization, Modular Devanagari Hindi & Hinglish ActionDispatcher (fixing 'यूट्यूब खोलो' and all Hindi commands), and fixed 1-Tap Live OTA & modal action buttons."
+  "changelog": "v7.0.37 Update: Star-Trek Level 5-Pillar Autonomous Voice Agent — (1) Full-Duplex 16kHz PCM DSP with Hardware AEC/NS/AGC, <50ms Barge-in & Dynamic 800-1200ms VAD, (2) Multi-Step Devanagari/Hinglish Chained Actions Queue, (3) Screen Node Tree JSON & Vision Coordinate Auto-Click Agent, (4) Android 14+ Foreground Autonomy & Proactive Voice Alerts, and (5) Offline SQLite/IndexedDB Local Vector Brain Memory."
 }
