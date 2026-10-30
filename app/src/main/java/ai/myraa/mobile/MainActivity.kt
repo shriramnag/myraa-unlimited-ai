@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.speech.RecognizerIntent
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -20,16 +21,40 @@ import ai.myraa.mobile.ui.theme.MyraaTheme
 import java.util.Locale
 
 class MainActivity : ComponentActivity() {
-    private lateinit var voiceEngine: VoiceAssistantEngine
+    private var voiceEngine: VoiceAssistantEngine? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        voiceEngine = VoiceAssistantEngine(this)
-        val brainRepo = BrainDatabaseRepository(this)
-        val supervisorRepo = AgentSupervisorRepository()
-        val deviceController = DeviceActionController(this)
+        // Robust startup with safe fallback error boundaries
+        val safeVoiceEngine = try {
+            VoiceAssistantEngine(this).also { voiceEngine = it }
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Voice assistant initialization error: ${e.message}", e)
+            VoiceAssistantEngine(this).also { voiceEngine = it }
+        }
+
+        val brainRepo = try {
+            BrainDatabaseRepository(this)
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Brain database initialization error: ${e.message}", e)
+            BrainDatabaseRepository(this)
+        }
+
+        val supervisorRepo = try {
+            AgentSupervisorRepository()
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Agent supervisor initialization error: ${e.message}", e)
+            AgentSupervisorRepository()
+        }
+
+        val deviceController = try {
+            DeviceActionController(this)
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Device controller initialization error: ${e.message}", e)
+            DeviceActionController(this)
+        }
 
         setContent {
             val speechLauncher = rememberLauncherForActivityResult(
@@ -53,7 +78,7 @@ class MainActivity : ComponentActivity() {
                     supervisorRepo = supervisorRepo,
                     brainRepo = brainRepo,
                     deviceController = deviceController,
-                    voiceEngine = voiceEngine,
+                    voiceEngine = safeVoiceEngine,
                     onLaunchSpeechRecognition = {
                         try {
                             val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
@@ -73,6 +98,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        voiceEngine.shutdown()
+        try {
+            voiceEngine?.shutdown()
+        } catch (e: Exception) {
+            Log.e("MainActivity", "VoiceEngine shutdown error: ${e.message}", e)
+        }
     }
 }

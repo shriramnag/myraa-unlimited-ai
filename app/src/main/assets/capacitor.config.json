@@ -1,0 +1,14 @@
+{
+  "appId": "ai.myraa.mobile",
+  "appName": "MYRAA",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "android": {
+    "allowMixedContent": true,
+    "webContentsDebuggingEnabled": true,
+    "hardwareAccelerated": true
+  },
+  "server": {
+    "cleartext": true
+  }
+}

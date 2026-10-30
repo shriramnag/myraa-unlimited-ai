@@ -166,6 +166,24 @@ export function App() {
       return;
     }
 
+    // YouTube Creator Skills (11 Skills)
+    if (
+      lower.includes("youtube") ||
+      lower.includes("यूट्यूब") ||
+      lower.includes("script") ||
+      lower.includes("स्क्रिप्ट") ||
+      lower.includes("shorts") ||
+      lower.includes("शॉर्ट्स") ||
+      lower.includes("hook") ||
+      lower.includes("seo")
+    ) {
+      setIsShivCoreOpen(true);
+      const resMsg = "यूट्यूब क्रिएटर स्किल इंजन (11 स्किल्स: स्क्रिप्ट्स, हुक, SEO, शॉर्ट्स) तैयार है!";
+      agentSupervisor.verifyAndCompleteTask(task.taskId, { ok: true, message: resMsg });
+      triggerAssistantResponse(query, resMsg, "yt-script-writer", specialist.avatar);
+      return;
+    }
+
     // 6. Camera
     if (lower.includes("camera") || lower.includes("कैमरा") || lower.includes("photo") || lower.includes("फ़ोटो")) {
       setActiveAppDrawerTab("DRAWER");
@@ -251,14 +269,16 @@ export function App() {
 
         {/* Supreme Owner Header */}
         <div className="flex items-center justify-between px-3 py-1.5 z-20 bg-slate-950/70 border-b border-white/5 backdrop-blur-sm text-[10px]">
-          <div className="flex items-center gap-1.5">
-            <span className="font-bold text-white flex items-center gap-1">
-              <Sparkles className="w-3 h-3 text-sky-400" />
-              <span>SHIV AI</span>
-            </span>
-            <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-[#00E676] font-mono border border-emerald-500/30">
-              Shri Ram Nag
-            </span>
+          {/* Ultra-Sleek Minimal Owner Badge Chip */}
+          <div
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900/90 border border-white/10 backdrop-blur-md shadow-sm"
+            title="निर्माण कर्ता एवं मालिक: श्री राम नाग (Shri Ram Nag)"
+          >
+            <Sparkles className="w-3 h-3 text-sky-400 shrink-0" />
+            <span className="font-bold text-white text-[10px] tracking-tight">SHIV AI</span>
+            <span className="text-[8px] font-mono text-sky-400">v7.0.36</span>
+            <span className="text-slate-600 text-[10px]">|</span>
+            <span className="text-[9px] font-medium text-emerald-400 truncate max-w-[150px]">श्री राम नाग</span>
           </div>
 
           <div className="flex items-center gap-1.5">
