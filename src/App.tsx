@@ -195,12 +195,19 @@ export function App() {
   };
 
   const handleVoiceListen = () => {
-    if (isListening) return;
+    if (isListening) {
+      voiceBiometrics.stopListening();
+      setIsListening(false);
+      return;
+    }
     setIsListening(true);
     voiceBiometrics.listenForVoiceCommand(
       (transcript) => {
         setIsListening(false);
-        handleCommandSubmit(transcript);
+        if (transcript && transcript.trim()) {
+          // Immediately auto-submit the recognized text, trigger realistic Gemini voice output, and display avatar speaking animation!
+          handleCommandSubmit(transcript.trim());
+        }
       },
       (err) => {
         setIsListening(false);
@@ -390,39 +397,52 @@ export function App() {
             </button>
           </div>
 
-          {/* Voice Input & Command Field */}
-          <div className="flex items-center gap-1.5">
+          {/* Direct One-Touch Mic & Expanded Command Bar */}
+          <div className="flex items-center gap-2 w-full pb-0.5">
+            {/* Master One-Touch Mic Controller */}
             <button
               onClick={handleVoiceListen}
               type="button"
-              className={`p-2.5 rounded-2xl border transition shadow-lg ${
+              className={`w-11 h-11 shrink-0 rounded-2xl border flex items-center justify-center transition-all shadow-lg active:scale-95 ${
                 isListening
-                  ? "bg-rose-500 border-rose-400 text-white animate-pulse"
-                  : "bg-slate-900 border-white/15 text-slate-300 hover:text-white hover:bg-slate-800"
+                  ? "bg-rose-500 border-rose-400 text-white animate-pulse ring-4 ring-rose-500/30 scale-105"
+                  : "bg-slate-900/90 border-white/15 text-sky-400 hover:text-white hover:bg-slate-800"
               }`}
-              title="Speak voice command (Gemini Audio Engine)"
+              title={isListening ? "सुन रहे हैं... बोलिए..." : "आवाज़ से निर्देश देने के लिए माइक दबाएं"}
             >
-              {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4 text-sky-400" />}
+              {isListening ? <MicOff className="w-5 h-5 animate-bounce" /> : <Mic className="w-5 h-5" />}
             </button>
 
-            <div className="relative flex-1">
+            {/* Cleanly Expanded Input Field */}
+            <div className="flex-1 min-w-0">
               <input
                 type="text"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                placeholder="बोलें या टाइप करें (उदा: 'कॉल करो', 'डीप रिसर्च', 'फ्लैशलाइट')..."
-                className="w-full px-3.5 py-2.5 bg-slate-900 border border-white/15 rounded-2xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 transition pr-9"
+                placeholder={isListening ? "🎙️ सुन रहे हैं... बोलिए..." : "बोलें या टाइप करें (उदा: 'डीप रिसर्च', 'फ्लैशलाइट')..."}
+                className={`w-full px-3.5 py-2.5 bg-slate-900/90 border rounded-2xl text-xs text-white placeholder-slate-500 focus:outline-none transition-all ${
+                  isListening
+                    ? "border-rose-500 ring-2 ring-rose-500/20"
+                    : "border-white/15 focus:border-sky-500"
+                }`}
                 onKeyDown={(e) => e.key === "Enter" && handleCommandSubmit()}
               />
-              <button
-                onClick={() => handleCommandSubmit()}
-                type="button"
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 transition"
-                title="Send Command"
-              >
-                <Send className="w-3.5 h-3.5" />
-              </button>
             </div>
+
+            {/* Dedicated Send Button - Fully Visible, Comfortable to Tap, Never Clipped */}
+            <button
+              onClick={() => handleCommandSubmit()}
+              disabled={!inputText.trim()}
+              type="button"
+              className={`w-11 h-11 shrink-0 rounded-2xl flex items-center justify-center transition-all shadow-md active:scale-95 ${
+                inputText.trim()
+                  ? "bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold"
+                  : "bg-slate-900/80 border border-white/10 text-slate-600 cursor-not-allowed"
+              }`}
+              title="Send Command"
+            >
+              <Send className="w-4 h-4 fill-current ml-0.5" />
+            </button>
           </div>
 
           {/* Android Home Gesture Pill */}

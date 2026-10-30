@@ -303,20 +303,33 @@ class VoiceBiometricsService {
     this.notify(false, "");
   }
 
+  public stopListening() {
+    this.isListening = false;
+    try {
+      this.recognition?.stop();
+    } catch {}
+  }
+
   public listenForVoiceCommand(
     onResult: (text: string) => void,
     onError?: (err: string) => void
   ) {
+    if (typeof window !== "undefined" && !this.recognition) {
+      this.initSpeechRecognition();
+    }
     if (!this.recognition) {
       onError?.("Web Speech API not supported in this browser. Please use keyboard input.");
       return;
     }
     try {
+      this.stopSpeaking();
       this.isListening = true;
       this.recognition.onresult = (event: any) => {
         this.isListening = false;
         const transcript = event.results?.[0]?.[0]?.transcript || "";
-        onResult(transcript);
+        if (transcript.trim()) {
+          onResult(transcript.trim());
+        }
       };
       this.recognition.onerror = (event: any) => {
         this.isListening = false;
