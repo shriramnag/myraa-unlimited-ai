@@ -58,9 +58,20 @@ jobs:
       - name: Restore Permanent 2020-Dated Shri Ram Nag Release Keystore & Gradle Config
         run: |
           cat << 'KEYEOF' | base64 -d > myraa_release.keystore
-          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
+          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
           KEYEOF
-          cp myraa_release.keystore debug.keystore
+          if [ ! -s myraa_release.keystore ]; then
+            keytool -genkeypair -v -keystore myraa_release.keystore -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Shri Ram Nag, OU=SHIV AI, O=MYRAA, L=India, S=IN, C=IN" || true
+          fi
+          cp -f myraa_release.keystore debug.keystore || true
+
+          cat > gradle.properties << 'EOF'
+          org.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=512m -Dfile.encoding=UTF-8
+          kotlin.daemon.jvmargs=-Xmx1536m -XX:MaxMetaspaceSize=512m
+          android.useAndroidX=true
+          kotlin.code.style=official
+          android.nonTransitiveRClass=true
+          EOF
 
           cat > settings.gradle.kts << 'EOF'
           pluginManagement {
@@ -98,7 +109,7 @@ jobs:
 
           android {
               namespace = "ai.myraa.mobile"
-              compileSdk = 35
+              compileSdk = 34
 
               defaultConfig {
                   applicationId = "ai.shriramnag.myraa"
@@ -106,28 +117,47 @@ jobs:
                   targetSdk = 34
                   versionCode = ${VER_CODE}
                   versionName = "${VER_NAME}"
+                  buildConfigField("String", "GEMINI_API_KEYS", "\"your_key_1,your_key_2,your_key_3\"")
                   buildConfigField("String", "GEMINI_API_KEY", "\"AIzaSyDummyPlaceholderKeyForOfflineFallback\"")
                   buildConfigField("String", "GROQ_API_KEY", "\"gsk_DummyPlaceholderKeyForOfflineFallback\"")
+                  buildConfigField("String", "OPENROUTER_API_KEY", "\"placeholder_openrouter_key\"")
+                  buildConfigField("String", "DATA_DIR", "\"./data\"")
+                  buildConfigField("String", "DESKTOP_AGENT_URL", "\"http://127.0.0.1:8765\"")
               }
 
               signingConfigs {
                   create("release") {
-                      storeFile = file("\${rootDir}/myraa_release.keystore")
-                      storePassword = "android"
-                      keyAlias = "androiddebugkey"
-                      keyPassword = "android"
-                      enableV1Signing = true
-                      enableV2Signing = true
-                      enableV3Signing = true
+                      val ksFile = file("\${rootDir}/myraa_release.keystore")
+                      val fallbackFile = file("\${rootDir}/debug.keystore")
+                      if (ksFile.exists() && ksFile.length() > 0L) {
+                          storeFile = ksFile
+                          storePassword = System.getenv("KEYSTORE_PASSWORD") ?: "android"
+                          keyAlias = System.getenv("KEY_ALIAS") ?: "androiddebugkey"
+                          keyPassword = System.getenv("KEY_PASSWORD") ?: "android"
+                          enableV1Signing = true
+                          enableV2Signing = true
+                          enableV3Signing = true
+                      } else if (fallbackFile.exists() && fallbackFile.length() > 0L) {
+                          storeFile = fallbackFile
+                          storePassword = "android"
+                          keyAlias = "androiddebugkey"
+                          keyPassword = "android"
+                          enableV1Signing = true
+                          enableV2Signing = true
+                          enableV3Signing = true
+                      }
                   }
                   getByName("debug") {
-                      storeFile = file("\${rootDir}/myraa_release.keystore")
-                      storePassword = "android"
-                      keyAlias = "androiddebugkey"
-                      keyPassword = "android"
-                      enableV1Signing = true
-                      enableV2Signing = true
-                      enableV3Signing = true
+                      val ksFile = file("\${rootDir}/myraa_release.keystore")
+                      if (ksFile.exists() && ksFile.length() > 0L) {
+                          storeFile = ksFile
+                          storePassword = "android"
+                          keyAlias = "androiddebugkey"
+                          keyPassword = "android"
+                          enableV1Signing = true
+                          enableV2Signing = true
+                          enableV3Signing = true
+                      }
                   }
               }
 
@@ -135,7 +165,12 @@ jobs:
                   release {
                       isMinifyEnabled = false
                       isShrinkResources = false
-                      signingConfig = signingConfigs.getByName("release")
+                      val releaseSigning = signingConfigs.findByName("release")
+                      signingConfig = if (releaseSigning?.storeFile?.exists() == true) {
+                          releaseSigning
+                      } else {
+                          signingConfigs.getByName("debug")
+                      }
                   }
                   debug {
                       signingConfig = signingConfigs.getByName("debug")
@@ -196,17 +231,45 @@ jobs:
 
       - name: Build & Explicitly Re-Sign Universal APK (myraa-v${{ env.VER_NAME }}.apk)
         run: |
-          gradle assembleRelease assembleDebug --no-daemon --stacktrace
+          if [ -x "./gradlew" ]; then
+            ./gradlew assembleRelease --no-daemon --stacktrace -Dorg.gradle.jvmargs="-Xmx2048m -XX:MaxMetaspaceSize=512m"
+          else
+            gradle assembleRelease --no-daemon --stacktrace -Dorg.gradle.jvmargs="-Xmx2048m -XX:MaxMetaspaceSize=512m"
+          fi
+
           mkdir -p releases
+
+          BUILT_APK=""
+          for candidate in \
+            "app/build/outputs/apk/release/app-release.apk" \
+            "app/build/outputs/apk/release/app-release-unsigned.apk" \
+            "android/app/build/outputs/apk/release/app-release.apk" \
+            "android/app/build/outputs/apk/release/app-release-unsigned.apk"; do
+            if [ -f "$candidate" ]; then
+              BUILT_APK="$candidate"
+              break
+            fi
+          done
+
+          if [ -z "$BUILT_APK" ]; then
+            BUILT_APK=$(find app/build/outputs/apk -name "*.apk" | sort | head -n 1)
+          fi
+
+          echo "Located built APK at: $BUILT_APK"
+          if [ -z "$BUILT_APK" ] || [ ! -f "$BUILT_APK" ]; then
+            echo "ERROR: No APK found in output directories!"
+            exit 1
+          fi
+
           APKSIGNER=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -n 1)
           ZIPALIGN=$(find "$ANDROID_HOME/build-tools" -name zipalign | sort -V | tail -n 1)
-          if [ -n "$ZIPALIGN" ] && [ -n "$APKSIGNER" ]; then
-            "$ZIPALIGN" -p -f -v 4 app/build/outputs/apk/release/app-release.apk releases/aligned.apk
+          if [ -n "$ZIPALIGN" ] && [ -n "$APKSIGNER" ] && [ -s myraa_release.keystore ]; then
+            "$ZIPALIGN" -p -f -v 4 "$BUILT_APK" releases/aligned.apk
             "$APKSIGNER" sign --ks myraa_release.keystore --ks-pass pass:android --key-pass pass:android --ks-key-alias androiddebugkey --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true --out "releases/myraa-v${VER_NAME}.apk" releases/aligned.apk
             rm -f releases/aligned.apk
             "$APKSIGNER" verify --verbose "releases/myraa-v${VER_NAME}.apk"
           else
-            cp app/build/outputs/apk/release/app-release.apk "releases/myraa-v${VER_NAME}.apk"
+            cp "$BUILT_APK" "releases/myraa-v${VER_NAME}.apk"
           fi
           cp "releases/myraa-v${VER_NAME}.apk" releases/myraa-v7.0.34.apk
           cp "releases/myraa-v${VER_NAME}.apk" releases/myraa-latest.apk

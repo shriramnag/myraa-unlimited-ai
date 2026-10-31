@@ -134,9 +134,18 @@ class VoiceAssistantEngine(private val context: Context) : TextToSpeech.OnInitLi
             val prefs = context.getSharedPreferences("MyraaBrainDatabase_ShriRamNag_v3", Context.MODE_PRIVATE)
             val saved = prefs.getString("GEMINI_API_KEY", null)
             if (!saved.isNullOrBlank()) return saved.trim()
-            val buildKeys = BuildConfig.GEMINI_API_KEYS
+            val buildKeys = try {
+                BuildConfig.GEMINI_API_KEYS
+            } catch (_: Throwable) {
+                try {
+                    val field = BuildConfig::class.java.getDeclaredField("GEMINI_API_KEY")
+                    field.get(null) as? String ?: ""
+                } catch (_: Throwable) {
+                    ""
+                }
+            }
             val firstKey = buildKeys.split(",").map { it.trim() }.firstOrNull {
-                it.isNotEmpty() && !it.startsWith("your_key") && !it.startsWith("placeholder")
+                it.isNotEmpty() && !it.startsWith("your_key") && !it.startsWith("placeholder") && !it.startsWith("AIzaSyDummy")
             }
             firstKey ?: ""
         } catch (e: Throwable) {
