@@ -1,18 +1,17 @@
 package ai.myraa.mobile
 
-import android.app.Activity
-import android.content.Intent
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.speech.RecognizerIntent
 import android.util.Log
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import ai.myraa.mobile.data.AgentSupervisorRepository
 import ai.myraa.mobile.data.BrainDatabaseRepository
 import ai.myraa.mobile.data.DeviceActionController
@@ -71,22 +70,16 @@ class MainActivity : ComponentActivity() {
 
         try {
             setContent {
-                val speechLauncher = rememberLauncherForActivityResult(
-                    contract = ActivityResultContracts.StartActivityForResult()
-                ) { result ->
-                    try {
-                        if (result.resultCode == Activity.RESULT_OK && result.data != null) {
-                            val matches = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-                            val spokenText = matches?.firstOrNull()
-                            if (!spokenText.isNullOrBlank()) {
-                                supervisorRepo.createTask(
-                                    title = "Voice Input: " + spokenText.take(25),
-                                    actionName = spokenText
-                                )
-                            }
+                var pendingVoiceCallback: ((String) -> Unit)? = null
+
+                val micPermissionLauncher = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.RequestPermission()
+                ) { isGranted ->
+                    if (isGranted) {
+                        val cb = pendingVoiceCallback
+                        if (cb != null) {
+                            safeVoiceEngine.startInAppListening(onFinalTranscript = cb)
                         }
-                    } catch (e: Throwable) {
-                        Log.e("MainActivity", "Speech result handling error: ${e.message}", e)
                     }
                 }
 
@@ -96,16 +89,21 @@ class MainActivity : ComponentActivity() {
                         brainRepo = brainRepo,
                         deviceController = deviceController,
                         voiceEngine = safeVoiceEngine,
-                        onLaunchSpeechRecognition = {
+                        onRequestInAppVoice = { onRecognizedText ->
                             try {
-                                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, "hi-IN")
-                                    putExtra(RecognizerIntent.EXTRA_PROMPT, "श्री राम नाग जी, निर्देश बोलिए...")
+                                val hasMicPerm = ContextCompat.checkSelfPermission(
+                                    this@MainActivity,
+                                    Manifest.permission.RECORD_AUDIO
+                                ) == PackageManager.PERMISSION_GRANTED
+
+                                if (hasMicPerm) {
+                                    safeVoiceEngine.startInAppListening(onFinalTranscript = onRecognizedText)
+                                } else {
+                                    pendingVoiceCallback = onRecognizedText
+                                    micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                                 }
-                                speechLauncher.launch(intent)
                             } catch (e: Throwable) {
-                                Toast.makeText(this@MainActivity, "Voice recognition not available on device", Toast.LENGTH_SHORT).show()
+                                Log.e("MainActivity", "In-app voice launch error: ${e.message}", e)
                             }
                         }
                     )
@@ -115,7 +113,7 @@ class MainActivity : ComponentActivity() {
             Log.e("MainActivity", "setContent error boundary caught: ${e.message}", e)
         }
 
-        // Defer native TTS / hardware service binding until AFTER the first UI frame renders
+        // Defer native service initialization until AFTER the first UI frame renders
         Handler(Looper.getMainLooper()).postDelayed({
             try {
                 safeVoiceEngine.initializeDeferred()

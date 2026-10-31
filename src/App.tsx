@@ -40,6 +40,9 @@ export function App() {
   const [cameraMode, setCameraMode] = useState<"CLOSEUP" | "FULL">("CLOSEUP");
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [waveformLevels, setWaveformLevels] = useState<number[]>([
+    0.2, 0.35, 0.5, 0.3, 0.6, 0.4, 0.7, 0.35, 0.5, 0.3, 0.45, 0.25,
+  ]);
   const [userPrompt, setUserPrompt] = useState("");
   const [inputText, setInputText] = useState("");
   const [replyText, setReplyText] = useState(
@@ -262,13 +265,13 @@ export function App() {
     voiceBiometrics.listenForVoiceCommand(
       (transcript) => {
         setIsListening(false);
+        setInputText("");
         if (transcript && transcript.trim()) {
-          // Immediately auto-submit the recognized text, trigger realistic Gemini voice output, and display avatar speaking animation!
+          // Immediately auto-submit the recognized text on voice pause, trigger realistic Gemini progressive voice stream, and display avatar speaking animation!
           handleCommandSubmit(transcript.trim());
         }
       },
       (err) => {
-        // Fallback to native Android speech recognizer bridge if WebView SpeechRecognition is restricted
         try {
           const bridge = (window as any).MyraaNativeBridge;
           if (bridge && typeof bridge.startVoiceRecognition === "function") {
@@ -281,6 +284,12 @@ export function App() {
           "Voice Command",
           "माफ़ कीजिए, आवाज़ समझ नहीं आई। कृपया दोबारा बोलें या लिखकर भेजें।"
         );
+      },
+      (partialText) => {
+        setInputText(partialText);
+      },
+      (bars) => {
+        setWaveformLevels(bars);
       }
     );
   };
@@ -495,20 +504,42 @@ export function App() {
               {isListening ? <MicOff className="w-5 h-5 animate-bounce" /> : <Mic className="w-5 h-5" />}
             </button>
 
-            {/* Cleanly Expanded Input Field */}
+            {/* Cleanly Expanded Input Field / Live In-App Sound-Wave Frequency Bar */}
             <div className="flex-1 min-w-0">
-              <input
-                type="text"
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                placeholder={isListening ? "🎙️ सुन रहे हैं... बोलिए..." : "बोलें या टाइप करें (उदा: 'डीप रिसर्च', 'फ्लैशलाइट')..."}
-                className={`w-full px-3.5 py-2.5 bg-slate-900/90 border rounded-2xl text-xs text-white placeholder-slate-500 focus:outline-none transition-all ${
-                  isListening
-                    ? "border-rose-500 ring-2 ring-rose-500/20"
-                    : "border-white/15 focus:border-sky-500"
-                }`}
-                onKeyDown={(e) => e.key === "Enter" && handleCommandSubmit()}
-              />
+              {isListening ? (
+                <div className="w-full px-3 py-2 bg-slate-900/95 border border-rose-500/80 ring-2 ring-rose-500/20 rounded-2xl flex items-center gap-2.5 transition-all">
+                  <div className="flex items-center gap-0.5 h-6 shrink-0">
+                    {waveformLevels.map((lvl, idx) => (
+                      <span
+                        key={idx}
+                        className="w-1 rounded-full bg-gradient-to-t from-sky-400 via-cyan-300 to-rose-400 transition-all duration-75"
+                        style={{
+                          height: `${Math.max(20, Math.min(100, Math.round(lvl * 100)))}%`,
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[11px] font-semibold text-white truncate">
+                      {inputText.trim()
+                        ? inputText
+                        : "सुन रहे हैं... बोलिए (रुकने पर ऑटो-सेंड)"}
+                    </div>
+                    <div className="text-[8px] font-mono text-sky-400 tracking-wide truncate">
+                      LIVE SOUND-WAVE • ZERO-POPUP AUTO SUBMIT
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <input
+                  type="text"
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  placeholder="बोलें या टाइप करें (उदा: 'डीप रिसर्च', 'फ्लैशलाइट')..."
+                  className="w-full px-3.5 py-2.5 bg-slate-900/90 border border-white/15 focus:border-sky-500 rounded-2xl text-xs text-white placeholder-slate-500 focus:outline-none transition-all"
+                  onKeyDown={(e) => e.key === "Enter" && handleCommandSubmit()}
+                />
+              )}
             </div>
 
             {/* Dedicated Send Button - Fully Visible, Comfortable to Tap, Never Clipped */}

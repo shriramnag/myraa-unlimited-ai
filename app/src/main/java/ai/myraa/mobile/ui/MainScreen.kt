@@ -29,12 +29,15 @@ fun MainScreen(
     brainRepo: BrainDatabaseRepository,
     deviceController: DeviceActionController,
     voiceEngine: VoiceAssistantEngine,
-    onLaunchSpeechRecognition: () -> Unit
+    onRequestInAppVoice: ((String) -> Unit) -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
     val tasks by supervisorRepo.tasks.collectAsState()
     val isEmergencyStopActive by supervisorRepo.isEmergencyStopActive.collectAsState()
     val isSpeaking by voiceEngine.isSpeaking.collectAsState()
+    val isListening by voiceEngine.isListening.collectAsState()
+    val partialTranscript by voiceEngine.partialTranscript.collectAsState()
+    val waveformLevels by voiceEngine.waveformLevels.collectAsState()
     val isVoiceLockActive by voiceEngine.isVoiceLockActive.collectAsState()
     val hasApiKey by voiceEngine.hasApiKey.collectAsState()
 
@@ -48,6 +51,13 @@ fun MainScreen(
     }
     var activeToolId by remember { mutableStateOf<String?>(null) }
     var isTorchActive by remember { mutableStateOf(false) }
+
+    // Mirror live partial speech into the command bar while listening
+    LaunchedEffect(partialTranscript, isListening) {
+        if (isListening && partialTranscript.isNotBlank()) {
+            inputText = partialTranscript
+        }
+    }
 
     // Defer hardware & TTS checks until after first composition
     LaunchedEffect(Unit) {
@@ -273,7 +283,17 @@ fun MainScreen(
                 inputText = inputText,
                 onInputChange = { inputText = it },
                 onSubmit = { handleCommandSubmit(it) },
-                onVoiceClick = onLaunchSpeechRecognition,
+                onVoiceClick = {
+                    if (isListening) {
+                        voiceEngine.stopInAppListening()
+                    } else {
+                        onRequestInAppVoice { recognizedText ->
+                            handleCommandSubmit(recognizedText)
+                        }
+                    }
+                },
+                isListening = isListening,
+                waveformLevels = waveformLevels,
                 onOpenBrainDb = { showBrainDb = true },
                 onOpenShivCore = { showShivCore = true },
                 onToggleTorch = {
