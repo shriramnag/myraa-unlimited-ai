@@ -36,31 +36,39 @@ public class MyraaAccessibilityService extends AccessibilityService {
 
     @Override
     protected void onServiceConnected() {
-        super.onServiceConnected();
-        instance = this;
-        AuditLogManager.recordEvent("INFO", "ACCESSIBILITY_SERVICE", "SERVICE_CONNECTED", "ALLOWED",
-            "SHIV AI AccessibilityService connected for Owner Shri Ram Nag.");
+        try {
+            super.onServiceConnected();
+            instance = this;
+            AuditLogManager.recordEvent("INFO", "ACCESSIBILITY_SERVICE", "SERVICE_CONNECTED", "ALLOWED",
+                "SHIV AI AccessibilityService connected for Owner Shri Ram Nag.");
+        } catch (Throwable ignored) {}
     }
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
-        if (event == null || event.getPackageName() == null) return;
-        String pkg = event.getPackageName().toString();
-        if (SecurityPolicyEngine.isBlockedPackage(pkg)) {
-            return;
-        }
+        try {
+            if (event == null || event.getPackageName() == null) return;
+            String pkg = event.getPackageName().toString();
+            if (SecurityPolicyEngine.isBlockedPackage(pkg)) {
+                return;
+            }
+        } catch (Throwable ignored) {}
     }
 
     @Override
     public void onInterrupt() {
-        AuditLogManager.recordEvent("INFO", "ACCESSIBILITY_SERVICE", "SERVICE_INTERRUPTED", "CANCELLED",
-            "SHIV AI AccessibilityService interrupted.");
+        try {
+            AuditLogManager.recordEvent("INFO", "ACCESSIBILITY_SERVICE", "SERVICE_INTERRUPTED", "CANCELLED",
+                "SHIV AI AccessibilityService interrupted.");
+        } catch (Throwable ignored) {}
     }
 
     @Override
     public void onDestroy() {
-        instance = null;
-        super.onDestroy();
+        try {
+            instance = null;
+            super.onDestroy();
+        } catch (Throwable ignored) {}
     }
 
     public SecurityPolicyEngine.PolicyDecision verifyScreenSafeForAutomation(AccessibilityNodeInfo root) {

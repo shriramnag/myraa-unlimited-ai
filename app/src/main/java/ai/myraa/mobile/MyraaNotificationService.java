@@ -29,37 +29,39 @@ public class MyraaNotificationService extends NotificationListenerService {
 
     @Override
     public void onNotificationPosted(StatusBarNotification sbn) {
-        if (sbn == null || sbn.getNotification() == null) return;
-        String pkg = sbn.getPackageName();
+        try {
+            if (sbn == null || sbn.getNotification() == null) return;
+            String pkg = sbn.getPackageName();
 
-        // Layer 1: Package-level Payment & Authenticator Shield
-        if (SecurityPolicyEngine.isBlockedPackage(pkg)) {
-            AuditLogManager.recordEvent("HIGH", "NOTIFICATION_SHIELD", "ON_NOTIFICATION_POSTED",
-                "BLOCKED_BY_POLICY", "Ignored notification from financial/authenticator package.");
-            return;
-        }
-
-        Notification n = sbn.getNotification();
-        Bundle extras = n.extras;
-        if (extras == null) return;
-
-        String title = extras.getString(Notification.EXTRA_TITLE, "");
-        CharSequence textSeq = extras.getCharSequence(Notification.EXTRA_TEXT);
-        String text = textSeq != null ? textSeq.toString() : "";
-        String combined = title + " " + text;
-
-        // Layer 2: Bi-directional OTP, PIN, CVV, Card & Payment Keyword Shield
-        if (SecurityPolicyEngine.containsSensitiveOtpOrPaymentData(combined)) {
-            AuditLogManager.recordEvent("CRITICAL", "OTP_SHIELD", "ON_NOTIFICATION_POSTED",
-                "BLOCKED_BY_POLICY", "Suppressed notification containing OTP or payment credential.");
-            return;
-        }
-
-        synchronized (recentNotifications) {
-            if (recentNotifications.size() >= 25) {
-                recentNotifications.remove(0);
+            // Layer 1: Package-level Payment & Authenticator Shield
+            if (SecurityPolicyEngine.isBlockedPackage(pkg)) {
+                AuditLogManager.recordEvent("HIGH", "NOTIFICATION_SHIELD", "ON_NOTIFICATION_POSTED",
+                    "BLOCKED_BY_POLICY", "Ignored notification from financial/authenticator package.");
+                return;
             }
-            recentNotifications.add(new NotificationEntry(pkg, title, text, sbn.getPostTime()));
-        }
+
+            Notification n = sbn.getNotification();
+            Bundle extras = n.extras;
+            if (extras == null) return;
+
+            String title = extras.getString(Notification.EXTRA_TITLE, "");
+            CharSequence textSeq = extras.getCharSequence(Notification.EXTRA_TEXT);
+            String text = textSeq != null ? textSeq.toString() : "";
+            String combined = title + " " + text;
+
+            // Layer 2: Bi-directional OTP, PIN, CVV, Card & Payment Keyword Shield
+            if (SecurityPolicyEngine.containsSensitiveOtpOrPaymentData(combined)) {
+                AuditLogManager.recordEvent("CRITICAL", "OTP_SHIELD", "ON_NOTIFICATION_POSTED",
+                    "BLOCKED_BY_POLICY", "Suppressed notification containing OTP or payment credential.");
+                return;
+            }
+
+            synchronized (recentNotifications) {
+                if (recentNotifications.size() >= 25) {
+                    recentNotifications.remove(0);
+                }
+                recentNotifications.add(new NotificationEntry(pkg, title, text, sbn.getPostTime()));
+            }
+        } catch (Throwable ignored) {}
     }
 }

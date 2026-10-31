@@ -22,9 +22,9 @@ class BrainDatabaseRepository(private val context: Context) {
 
     private fun loadMemories() {
         memories.clear()
-        val raw = prefs.getString("memories_json", null)
-        if (raw != null) {
-            try {
+        try {
+            val raw = prefs.getString("memories_json", null)
+            if (raw != null) {
                 val array = JSONArray(raw)
                 for (i in 0 until array.length()) {
                     val obj = array.getJSONObject(i)
@@ -37,19 +37,19 @@ class BrainDatabaseRepository(private val context: Context) {
                     }
                     memories.add(
                         BrainMemory(
-                            id = obj.getString("id"),
-                            category = obj.getString("category"),
-                            key = obj.getString("key"),
-                            content = obj.getString("content"),
-                            timestamp = obj.getString("timestamp"),
+                            id = obj.optString("id", UUID.randomUUID().toString()),
+                            category = obj.optString("category", "FACT"),
+                            key = obj.optString("key", "Key"),
+                            content = obj.optString("content", ""),
+                            timestamp = obj.optString("timestamp", ""),
                             tags = tagsList
                         )
                     )
                 }
-            } catch (e: Exception) {
+            } else {
                 seedInitialMemories()
             }
-        } else {
+        } catch (e: Throwable) {
             seedInitialMemories()
         }
     }

@@ -11,47 +11,51 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.runtime.remember
 import ai.myraa.mobile.data.AgentSupervisorRepository
 import ai.myraa.mobile.data.BrainDatabaseRepository
 import ai.myraa.mobile.data.DeviceActionController
 import ai.myraa.mobile.data.VoiceAssistantEngine
 import ai.myraa.mobile.ui.MainScreen
 import ai.myraa.mobile.ui.theme.MyraaTheme
-import java.util.Locale
 
 class MainActivity : ComponentActivity() {
     private var voiceEngine: VoiceAssistantEngine? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+
+        // Edge-to-edge wrapped safely to prevent crashes on custom OEM ROMs
+        try {
+            enableEdgeToEdge()
+        } catch (e: Throwable) {
+            Log.w("MainActivity", "enableEdgeToEdge failed: ${e.message}")
+        }
 
         // Robust startup with safe fallback error boundaries
         val safeVoiceEngine = try {
             VoiceAssistantEngine(this).also { voiceEngine = it }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             Log.e("MainActivity", "Voice assistant initialization error: ${e.message}", e)
-            VoiceAssistantEngine(this).also { voiceEngine = it }
+            VoiceAssistantEngine(this)
         }
 
         val brainRepo = try {
             BrainDatabaseRepository(this)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             Log.e("MainActivity", "Brain database initialization error: ${e.message}", e)
             BrainDatabaseRepository(this)
         }
 
         val supervisorRepo = try {
             AgentSupervisorRepository()
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             Log.e("MainActivity", "Agent supervisor initialization error: ${e.message}", e)
             AgentSupervisorRepository()
         }
 
         val deviceController = try {
             DeviceActionController(this)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             Log.e("MainActivity", "Device controller initialization error: ${e.message}", e)
             DeviceActionController(this)
         }
@@ -60,16 +64,19 @@ class MainActivity : ComponentActivity() {
             val speechLauncher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.StartActivityForResult()
             ) { result ->
-                if (result.resultCode == Activity.RESULT_OK && result.data != null) {
-                    val matches = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-                    val spokenText = matches?.firstOrNull()
-                    if (!spokenText.isNullOrBlank()) {
-                        // Pass spoken text directly to chat/supervisor
-                        supervisorRepo.createTask(
-                            title = "Voice Input: " + spokenText.take(25),
-                            actionName = spokenText
-                        )
+                try {
+                    if (result.resultCode == Activity.RESULT_OK && result.data != null) {
+                        val matches = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+                        val spokenText = matches?.firstOrNull()
+                        if (!spokenText.isNullOrBlank()) {
+                            supervisorRepo.createTask(
+                                title = "Voice Input: " + spokenText.take(25),
+                                actionName = spokenText
+                            )
+                        }
                     }
+                } catch (e: Throwable) {
+                    Log.e("MainActivity", "Speech result handling error: ${e.message}", e)
                 }
             }
 
@@ -100,7 +107,7 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
         try {
             voiceEngine?.shutdown()
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             Log.e("MainActivity", "VoiceEngine shutdown error: ${e.message}", e)
         }
     }
