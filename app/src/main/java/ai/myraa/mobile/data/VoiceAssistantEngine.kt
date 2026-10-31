@@ -37,6 +37,9 @@ class VoiceAssistantEngine(private val context: Context) : TextToSpeech.OnInitLi
     private val _isVoiceLockActive = MutableStateFlow(true)
     val isVoiceLockActive: StateFlow<Boolean> = _isVoiceLockActive.asStateFlow()
 
+    private val _hasApiKey = MutableStateFlow(false)
+    val hasApiKey: StateFlow<Boolean> = _hasApiKey.asStateFlow()
+
     val speakerProfile = "श्री राम नाग (Shri Ram Nag) • ~155Hz Enrolled"
 
     // 6-Avatar Realistic Gemini Voice Mapping (Strict Preservation)
@@ -55,6 +58,7 @@ class VoiceAssistantEngine(private val context: Context) : TextToSpeech.OnInitLi
         initRequested = true
         engineScope.launch(Dispatchers.Main) {
             try {
+                _hasApiKey.value = resolveGeminiApiKey().isNotEmpty()
                 delay(400) // Allow UI/WebView to finish first-frame render before binding TTS service
                 tts = TextToSpeech(context.applicationContext, this@VoiceAssistantEngine)
             } catch (e: Throwable) {
@@ -129,11 +133,31 @@ class VoiceAssistantEngine(private val context: Context) : TextToSpeech.OnInitLi
         }
     }
 
+    fun getSavedApiKey(): String {
+        return try {
+            val prefs = context.getSharedPreferences("MyraaBrainDatabase_ShriRamNag_v3", Context.MODE_PRIVATE)
+            prefs.getString("GEMINI_API_KEY", "")?.trim() ?: ""
+        } catch (e: Throwable) {
+            ""
+        }
+    }
+
+    fun saveApiKey(newKey: String) {
+        try {
+            val trimmed = newKey.trim()
+            val prefs = context.getSharedPreferences("MyraaBrainDatabase_ShriRamNag_v3", Context.MODE_PRIVATE)
+            prefs.edit().putString("GEMINI_API_KEY", trimmed).apply()
+            _hasApiKey.value = resolveGeminiApiKey().isNotEmpty()
+        } catch (e: Throwable) {
+            Log.w("VoiceAssistantEngine", "saveApiKey warning: ${e.message}")
+        }
+    }
+
     private fun resolveGeminiApiKey(): String {
         return try {
             val prefs = context.getSharedPreferences("MyraaBrainDatabase_ShriRamNag_v3", Context.MODE_PRIVATE)
             val saved = prefs.getString("GEMINI_API_KEY", null)
-            if (!saved.isNullOrBlank()) return saved.trim()
+            if (!saved.isNullOrBlank() && saved.trim().length >= 10) return saved.trim()
             val buildKeys = try {
                 BuildConfig.GEMINI_API_KEYS
             } catch (_: Throwable) {

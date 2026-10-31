@@ -107,24 +107,56 @@ class VoiceBiometricsService {
   }
 
   private initApiKey() {
-    // Read from Vite environment or window or localStorage
-    const envKey = (import.meta as any).env?.VITE_GEMINI_API_KEY ||
-      (import.meta as any).env?.GEMINI_API_KEY ||
-      (window as any).__GEMINI_API_KEY__ ||
-      localStorage.getItem("MYRAA_GEMINI_KEY") ||
-      "";
-    this.apiKey = envKey;
+    try {
+      // Read from localStorage ('GEMINI_API_KEY' primary), window, or Vite environment
+      const storedKey =
+        localStorage.getItem("GEMINI_API_KEY") ||
+        localStorage.getItem("MYRAA_GEMINI_KEY") ||
+        (window as any).__GEMINI_API_KEY__ ||
+        (import.meta as any).env?.VITE_GEMINI_API_KEY ||
+        (import.meta as any).env?.GEMINI_API_KEY ||
+        "";
+      this.apiKey = storedKey.trim();
+    } catch {
+      this.apiKey = "";
+    }
   }
 
   public setApiKey(key: string) {
     this.apiKey = key.trim();
-    if (this.apiKey) {
-      localStorage.setItem("MYRAA_GEMINI_KEY", this.apiKey);
-    }
+    try {
+      if (this.apiKey) {
+        localStorage.setItem("GEMINI_API_KEY", this.apiKey);
+        localStorage.setItem("MYRAA_GEMINI_KEY", this.apiKey);
+      } else {
+        localStorage.removeItem("GEMINI_API_KEY");
+        localStorage.removeItem("MYRAA_GEMINI_KEY");
+      }
+    } catch {}
   }
 
   public getApiKey(): string {
+    try {
+      const latest =
+        localStorage.getItem("GEMINI_API_KEY") ||
+        localStorage.getItem("MYRAA_GEMINI_KEY") ||
+        this.apiKey;
+      if (latest && latest.trim()) {
+        this.apiKey = latest.trim();
+      }
+    } catch {}
     return this.apiKey;
+  }
+
+  public hasValidApiKey(): boolean {
+    const k = this.getApiKey();
+    return Boolean(
+      k &&
+        k.length >= 10 &&
+        !k.startsWith("your_key") &&
+        !k.startsWith("placeholder") &&
+        !k.startsWith("AIzaSyDummy")
+    );
   }
 
   private initSpeechRecognition() {
@@ -194,7 +226,7 @@ class VoiceBiometricsService {
     this.notify(true, cleanText);
 
     try {
-      const key = this.apiKey;
+      const key = this.getApiKey();
       const endpoint = key
         ? `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(key)}`
         : `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`;

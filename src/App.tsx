@@ -10,6 +10,7 @@ import { BrainDatabasePanel } from "./components/BrainDatabasePanel";
 import { AndroidAppsModal } from "./components/AndroidAppsModal";
 import { AdminVaultModal } from "./components/AdminVaultModal";
 import { ApkBuildDoctorModal } from "./components/ApkBuildDoctorModal";
+import { GeminiApiKeyModal } from "./components/GeminiApiKeyModal";
 import { agentSupervisor } from "./services/agentSupervisor";
 import { nativeBridge } from "./services/nativeBridge";
 import { voiceBiometrics } from "./services/voiceBiometrics";
@@ -31,6 +32,7 @@ import {
   Sun,
   Activity,
   Wrench,
+  KeyRound,
 } from "lucide-react";
 
 export function App() {
@@ -53,6 +55,14 @@ export function App() {
   const [activeAppDrawerTab, setActiveAppDrawerTab] = useState<string | null>(null);
   const [isAdminVaultOpen, setIsAdminVaultOpen] = useState(false);
   const [isApkDoctorOpen, setIsApkDoctorOpen] = useState(false);
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+  const [hasGeminiKey, setHasGeminiKey] = useState(() => {
+    try {
+      return voiceBiometrics.hasValidApiKey();
+    } catch {
+      return false;
+    }
+  });
   const [isPhoneFrameMode, setIsPhoneFrameMode] = useState(true);
 
   // Tasks & Device State (Wrapped in safe try-catch hydration to prevent storage boot crashes)
@@ -321,6 +331,20 @@ export function App() {
 
           <div className="flex items-center gap-1.5">
             <button
+              onClick={() => setIsApiKeyModalOpen(true)}
+              type="button"
+              className={`px-2 py-0.5 rounded-full font-bold flex items-center gap-1 border transition shadow-sm ${
+                hasGeminiKey
+                  ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/50 hover:bg-emerald-500/30"
+                  : "bg-sky-500/20 text-sky-300 border-sky-400/50 hover:bg-sky-500/30"
+              }`}
+              title="Settings / Google Gemini API Key"
+            >
+              <KeyRound className="w-2.5 h-2.5" />
+              <span>{hasGeminiKey ? "API Key ✓" : "API Key"}</span>
+            </button>
+
+            <button
               onClick={() => setIsApkDoctorOpen(true)}
               type="button"
               className="px-2 py-0.5 rounded-full font-bold flex items-center gap-1 border bg-[#00E676]/20 text-[#00E676] border-[#00E676]/50 hover:bg-[#00E676]/30 transition shadow-sm"
@@ -559,6 +583,13 @@ export function App() {
         <ApkBuildDoctorModal
           isOpen={isApkDoctorOpen}
           onClose={() => setIsApkDoctorOpen(false)}
+        />
+
+        <GeminiApiKeyModal
+          isOpen={isApiKeyModalOpen}
+          onClose={() => setIsApiKeyModalOpen(false)}
+          activeRole={activeRole}
+          onKeyUpdated={(valid) => setHasGeminiKey(valid)}
         />
       </div>
     </div>

@@ -36,6 +36,7 @@ fun MainScreen(
     val isEmergencyStopActive by supervisorRepo.isEmergencyStopActive.collectAsState()
     val isSpeaking by voiceEngine.isSpeaking.collectAsState()
     val isVoiceLockActive by voiceEngine.isVoiceLockActive.collectAsState()
+    val hasApiKey by voiceEngine.hasApiKey.collectAsState()
 
     var activeRole by remember { mutableStateOf(CharacterRole.MYRAA) }
     var cameraMode by remember { mutableStateOf("CLOSEUP") }
@@ -62,14 +63,16 @@ fun MainScreen(
     var showAppsHub by remember { mutableStateOf(false) }
     var showAdminVault by remember { mutableStateOf(false) }
     var showApkDoctor by remember { mutableStateOf(false) }
+    var showApiKeyModal by remember { mutableStateOf(false) }
 
     // Intercept back button if any dialog is open
-    BackHandler(enabled = showBrainDb || showShivCore || showAppsHub || showAdminVault || showApkDoctor) {
+    BackHandler(enabled = showBrainDb || showShivCore || showAppsHub || showAdminVault || showApkDoctor || showApiKeyModal) {
         showBrainDb = false
         showShivCore = false
         showAppsHub = false
         showAdminVault = false
         showApkDoctor = false
+        showApiKeyModal = false
     }
 
     fun triggerResponse(prompt: String, answer: String, toolId: String? = null, roleOverride: CharacterRole? = null) {
@@ -212,6 +215,7 @@ fun MainScreen(
                 TopStatusBar(
                     isTorchOn = isTorchActive,
                     isVoiceLockActive = isVoiceLockActive,
+                    hasApiKey = hasApiKey,
                     onToggleTorch = {
                         isTorchActive = deviceController.toggleTorch()
                         val msg = if (isTorchActive) "फ्लैशलाइट चालू (ON)" else "फ्लैशलाइट बंद (OFF)"
@@ -219,7 +223,8 @@ fun MainScreen(
                     },
                     onOpenApps = { showAppsHub = true },
                     onOpenAdminVault = { showAdminVault = true },
-                    onOpenApkDoctor = { showApkDoctor = true }
+                    onOpenApkDoctor = { showApkDoctor = true },
+                    onOpenApiKeySettings = { showApiKeyModal = true }
                 )
 
                 // Holographic Avatar Stage
@@ -316,6 +321,14 @@ fun MainScreen(
     if (showApkDoctor) {
         ApkDoctorDialog(
             onDismiss = { showApkDoctor = false }
+        )
+    }
+
+    if (showApiKeyModal) {
+        GeminiApiKeyDialog(
+            voiceEngine = voiceEngine,
+            activeRole = activeRole,
+            onDismiss = { showApiKeyModal = false }
         )
     }
 }

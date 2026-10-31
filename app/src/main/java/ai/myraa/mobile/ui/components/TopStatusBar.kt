@@ -23,10 +23,12 @@ import ai.myraa.mobile.ui.theme.*
 fun TopStatusBar(
     isTorchOn: Boolean,
     isVoiceLockActive: Boolean,
+    hasApiKey: Boolean = false,
     onToggleTorch: () -> Unit,
     onOpenApps: () -> Unit,
     onOpenAdminVault: () -> Unit,
     onOpenApkDoctor: () -> Unit,
+    onOpenApiKeySettings: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -90,6 +92,23 @@ fun TopStatusBar(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
+                // Gemini API Key Settings Action
+                IconButton(
+                    onClick = onOpenApiKeySettings,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(if (hasApiKey) EmeraldGreen.copy(alpha = 0.25f) else CyberCardLight)
+                        .testTag("top_bar_api_key_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Key,
+                        contentDescription = "Gemini API Key Settings",
+                        tint = if (hasApiKey) EmeraldGreen else CelestialBlue,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+
                 // Torch Action
                 IconButton(
                     onClick = onToggleTorch,
