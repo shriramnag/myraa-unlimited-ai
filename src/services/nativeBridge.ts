@@ -92,7 +92,16 @@ class NativeBridgeService {
   }
 
   public toggleFlashlight(): boolean {
-    this.flashlightState = !this.flashlightState;
+    try {
+      const androidBridge = (window as any).MyraaNativeBridge;
+      if (androidBridge && typeof androidBridge.toggleTorch === "function") {
+        this.flashlightState = Boolean(androidBridge.toggleTorch());
+      } else {
+        this.flashlightState = !this.flashlightState;
+      }
+    } catch {
+      this.flashlightState = !this.flashlightState;
+    }
     this.recordAudit(
       "INFO",
       "HARDWARE",
@@ -102,6 +111,19 @@ class NativeBridgeService {
     );
     return this.flashlightState;
   }
+
+  public launchNativeDialer(phoneNumber: string = "") {
+    try {
+      (window as any).MyraaNativeBridge?.launchDialer(phoneNumber);
+    } catch {}
+  }
+
+  public launchNativeApp(packageName: string) {
+    try {
+      (window as any).MyraaNativeBridge?.launchApp(packageName);
+    } catch {}
+  }
 }
 
 export const nativeBridge = new NativeBridgeService();
+

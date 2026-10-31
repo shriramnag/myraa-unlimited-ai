@@ -9,6 +9,7 @@
     "hardwareAccelerated": true
   },
   "server": {
+    "androidScheme": "https",
     "cleartext": true
   }
 }

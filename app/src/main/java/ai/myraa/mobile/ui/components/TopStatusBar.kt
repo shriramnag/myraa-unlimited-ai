@@ -2,7 +2,6 @@ package ai.myraa.mobile.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -34,55 +33,59 @@ fun TopStatusBar(
         color = CyberCard,
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .padding(horizontal = 12.dp, vertical = 4.dp)
             .clip(RoundedCornerShape(16.dp))
             .border(1.dp, CyberBorder, RoundedCornerShape(16.dp))
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .padding(horizontal = 10.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Left: Owner branding & voice lock
-            Column {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "👑 श्री राम नाग",
-                        color = Color.White,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(if (isVoiceLockActive) EmeraldGreen.copy(alpha = 0.2f) else DangerRed.copy(alpha = 0.2f))
-                            .border(
-                                1.dp,
-                                if (isVoiceLockActive) EmeraldGreen.copy(alpha = 0.5f) else DangerRed.copy(alpha = 0.5f),
-                                RoundedCornerShape(6.dp)
-                            )
-                            .padding(horizontal = 5.dp, vertical = 2.dp)
-                    ) {
-                        Text(
-                            text = if (isVoiceLockActive) "VOICE LOCK ON" else "UNLOCKED",
-                            color = if (isVoiceLockActive) EmeraldGreen else DangerRed,
-                            fontSize = 8.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
+            // Left: Ultra-Sleek Minimal Owner Badge Chip
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(50))
+                    .background(CyberVoid.copy(alpha = 0.85f))
+                    .border(1.dp, CyberBorder, RoundedCornerShape(50))
+                    .padding(horizontal = 10.dp, vertical = 5.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(5.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.AutoAwesome,
+                    contentDescription = "SHIV AI",
+                    tint = CelestialBlue,
+                    modifier = Modifier.size(12.dp)
+                )
                 Text(
-                    text = "SHIV AI • MYRAA v7.0.36",
-                    color = CelestialBlue,
+                    text = "SHIV AI",
+                    color = Color.White,
                     fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "v7.0.36",
+                    color = CelestialBlue,
+                    fontSize = 9.sp,
                     fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = "|",
+                    color = TextMuted,
+                    fontSize = 10.sp
+                )
+                Text(
+                    text = "श्री राम नाग",
+                    color = EmeraldGreen,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold
                 )
             }
 
-            // Right: Quick Action Buttons (Touch targets >= 48dp)
+            // Right: Quick Action Buttons
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -91,7 +94,7 @@ fun TopStatusBar(
                 IconButton(
                     onClick = onToggleTorch,
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(36.dp)
                         .clip(CircleShape)
                         .background(if (isTorchOn) AmberGold.copy(alpha = 0.25f) else CyberCardLight)
                         .testTag("top_bar_torch_button")
@@ -100,7 +103,7 @@ fun TopStatusBar(
                         imageVector = if (isTorchOn) Icons.Default.FlashlightOn else Icons.Default.FlashlightOff,
                         contentDescription = "Flashlight Toggle",
                         tint = if (isTorchOn) AmberGold else TextSecondary,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(16.dp)
                     )
                 }
 
@@ -108,7 +111,7 @@ fun TopStatusBar(
                 IconButton(
                     onClick = onOpenApps,
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(36.dp)
                         .clip(CircleShape)
                         .background(CyberCardLight)
                         .testTag("top_bar_apps_button")
@@ -117,7 +120,7 @@ fun TopStatusBar(
                         imageVector = Icons.Default.Apps,
                         contentDescription = "Installed Apps",
                         tint = CelestialBlue,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(16.dp)
                     )
                 }
 
@@ -125,7 +128,7 @@ fun TopStatusBar(
                 IconButton(
                     onClick = onOpenAdminVault,
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(36.dp)
                         .clip(CircleShape)
                         .background(CyberCardLight)
                         .testTag("top_bar_admin_vault_button")
@@ -133,8 +136,8 @@ fun TopStatusBar(
                     Icon(
                         imageVector = Icons.Default.Shield,
                         contentDescription = "Admin Vault",
-                        tint = EmeraldGreen,
-                        modifier = Modifier.size(18.dp)
+                        tint = if (isVoiceLockActive) EmeraldGreen else DangerRed,
+                        modifier = Modifier.size(16.dp)
                     )
                 }
 
@@ -142,7 +145,7 @@ fun TopStatusBar(
                 IconButton(
                     onClick = onOpenApkDoctor,
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(36.dp)
                         .clip(CircleShape)
                         .background(CyberCardLight)
                         .testTag("top_bar_apk_doctor_button")
@@ -151,7 +154,7 @@ fun TopStatusBar(
                         imageVector = Icons.Default.Build,
                         contentDescription = "Build Doctor",
                         tint = VioletPurple,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(16.dp)
                     )
                 }
             }

@@ -62,14 +62,22 @@ fun HolographicAvatarStage(
         label = "scale"
     )
 
-    // Load asset image bitmap
-    val avatarBitmap = remember(activeRole.assetImage) {
-        try {
-            context.assets.open(activeRole.assetImage).use { stream ->
-                BitmapFactory.decodeStream(stream)?.asImageBitmap()
+    // Load asset image bitmap asynchronously off the main thread to prevent cold-boot stalls or OOM
+    val avatarBitmap by produceState<androidx.compose.ui.graphics.ImageBitmap?>(
+        initialValue = null,
+        key1 = activeRole.assetImage
+    ) {
+        value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val opts = BitmapFactory.Options().apply {
+                    inPreferredConfig = android.graphics.Bitmap.Config.ARGB_8888
+                }
+                context.assets.open(activeRole.assetImage).use { stream ->
+                    BitmapFactory.decodeStream(stream, null, opts)?.asImageBitmap()
+                }
+            } catch (e: Throwable) {
+                null
             }
-        } catch (e: Exception) {
-            null
         }
     }
 
@@ -119,9 +127,10 @@ fun HolographicAvatarStage(
             )
 
             // Avatar Image Rendering
-            if (avatarBitmap != null) {
+            val bmp = avatarBitmap
+            if (bmp != null) {
                 Image(
-                    bitmap = avatarBitmap,
+                    bitmap = bmp,
                     contentDescription = activeRole.roleName,
                     modifier = Modifier
                         .fillMaxSize()

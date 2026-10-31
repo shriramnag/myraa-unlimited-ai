@@ -46,7 +46,15 @@ fun MainScreen(
         mutableStateOf("नमस्ते श्री राम नाग जी! MYRAA और SHIV AI के सभी 11 टूल्स, 43 नेटिव एक्शन्स और लॉन्ग-टर्म ब्रेन डेटाबेस 100% तैयार हैं।")
     }
     var activeToolId by remember { mutableStateOf<String?>(null) }
-    var isTorchActive by remember { mutableStateOf(deviceController.isTorchActive()) }
+    var isTorchActive by remember { mutableStateOf(false) }
+
+    // Defer hardware & TTS checks until after first composition
+    LaunchedEffect(Unit) {
+        try {
+            voiceEngine.initializeDeferred()
+            isTorchActive = deviceController.isTorchActive()
+        } catch (_: Throwable) {}
+    }
 
     // Dialogs state
     var showBrainDb by remember { mutableStateOf(false) }
@@ -64,11 +72,11 @@ fun MainScreen(
         showApkDoctor = false
     }
 
-    fun triggerResponse(prompt: String, answer: String, toolId: String? = null) {
+    fun triggerResponse(prompt: String, answer: String, toolId: String? = null, roleOverride: CharacterRole? = null) {
         userPrompt = prompt
         replyText = answer
         activeToolId = toolId
-        voiceEngine.speak(answer)
+        voiceEngine.speak(answer, roleOverride ?: activeRole)
     }
 
     fun handleCommandSubmit(query: String) {
@@ -135,7 +143,25 @@ fun MainScreen(
             showShivCore = true
             val res = "शिव एआई कोर के सभी 11 टूल्स और Deep Research वर्कबेंच तैयार है!"
             supervisorRepo.verifyAndCompleteTask(task.taskId, true, res)
-            triggerResponse(trimmed, res, "gpt-researcher")
+            triggerResponse(trimmed, res, "gpt-researcher", specialist.avatar)
+            return
+        }
+
+        // 5b. YouTube Creator Skill Engine (11 Autonomous Skills)
+        if (
+            lower.contains("youtube") ||
+            lower.contains("यूट्यूब") ||
+            lower.contains("script") ||
+            lower.contains("स्क्रिप्ट") ||
+            lower.contains("shorts") ||
+            lower.contains("शॉर्ट्स") ||
+            lower.contains("hook") ||
+            lower.contains("seo")
+        ) {
+            showShivCore = true
+            val res = "यूट्यूब क्रिएटर स्किल इंजन (11 स्किल्स: स्क्रिप्ट्स, हुक, SEO, शॉर्ट्स) तैयार है!"
+            supervisorRepo.verifyAndCompleteTask(task.taskId, true, res)
+            triggerResponse(trimmed, res, "yt-script-writer", specialist.avatar)
             return
         }
 
@@ -201,7 +227,7 @@ fun MainScreen(
                     activeRole = activeRole,
                     onSelectRole = { role ->
                         activeRole = role
-                        voiceEngine.speak(role.hindiTitle)
+                        voiceEngine.speak(role.hindiTitle, role)
                     },
                     isSpeaking = isSpeaking,
                     cameraMode = cameraMode,

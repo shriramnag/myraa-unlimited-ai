@@ -2,17 +2,16 @@ package ai.myraa.mobile.ui.dialogs
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,8 +33,12 @@ fun ShivAiCoreDialog(
     onDismiss: () -> Unit,
     onApplyResult: (toolName: String, resultText: String) -> Unit
 ) {
-    val tools = ShivAiCoreEngine.ALL_11_TOOLS
-    var selectedTool by remember { mutableStateOf<ShivAiTool>(tools.last()) } // Default gpt-researcher
+    var selectedTab by remember { mutableIntStateOf(0) } // 0 = 11 Core Tools, 1 = 11 YouTube Skills
+    val coreTools = ShivAiCoreEngine.ALL_11_TOOLS
+    val ytSkills = ShivAiCoreEngine.YOUTUBE_11_SKILLS
+    val activeList = if (selectedTab == 0) coreTools else ytSkills
+
+    var selectedTool by remember { mutableStateOf<ShivAiTool>(coreTools.last()) }
     var promptInput by remember { mutableStateOf("") }
     var outputText by remember { mutableStateOf("") }
     var isExecuting by remember { mutableStateOf(false) }
@@ -68,16 +71,16 @@ fun ShivAiCoreDialog(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text("🔱", fontSize = 22.sp)
+                        Text(if (selectedTab == 0) "🔱" else "🎬", fontSize = 22.sp)
                         Column {
                             Text(
-                                text = "शिव एआई कोर (Shiv-AI-Core)",
+                                text = if (selectedTab == 0) "शिव एआई कोर (Shiv-AI-Core)" else "YouTube Creator Skill Engine",
                                 color = Color.White,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "11 Autonomous Tools • 100% Free Forever",
+                                text = "ओनर: श्री राम नाग • 11 Autonomous Capabilities",
                                 color = AmberGold,
                                 fontSize = 10.sp
                             )
@@ -92,11 +95,44 @@ fun ShivAiCoreDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-                // Horizontal or Compact Tools Selection Bar
+                // Tab Switcher: 11 Core Tools vs 11 YouTube Creator Skills
+                TabRow(
+                    selectedTabIndex = selectedTab,
+                    containerColor = CyberCard,
+                    contentColor = AmberGold,
+                    indicator = { tabPositions ->
+                        TabRowDefaults.SecondaryIndicator(
+                            modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
+                            color = AmberGold
+                        )
+                    }
+                ) {
+                    Tab(
+                        selected = selectedTab == 0,
+                        onClick = {
+                            selectedTab = 0
+                            selectedTool = coreTools.last()
+                            outputText = ""
+                        },
+                        text = { Text("🔱 11 Core Tools", fontSize = 11.sp, fontWeight = FontWeight.Bold) }
+                    )
+                    Tab(
+                        selected = selectedTab == 1,
+                        onClick = {
+                            selectedTab = 1
+                            selectedTool = ytSkills.first()
+                            outputText = ""
+                        },
+                        text = { Text("🎬 11 YouTube Skills", fontSize = 11.sp, fontWeight = FontWeight.Bold) }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
                 Text(
-                    text = "चयनित टूल: #${selectedTool.index} ${selectedTool.name} (${selectedTool.hindiDesc})",
+                    text = "चयनित: #${selectedTool.index} ${selectedTool.name} (${selectedTool.hindiDesc})",
                     color = CelestialBlue,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold
@@ -104,18 +140,18 @@ fun ShivAiCoreDialog(
 
                 Spacer(modifier = Modifier.height(6.dp))
 
-                // Tools List Grid / Column
+                // Tools List Box
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(130.dp)
+                        .height(135.dp)
                         .clip(RoundedCornerShape(14.dp))
                         .background(CyberCard)
                         .border(1.dp, CyberBorder, RoundedCornerShape(14.dp))
                         .padding(6.dp)
                 ) {
                     LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        items(tools) { tool ->
+                        items(activeList) { tool ->
                             val isSelected = tool.id == selectedTool.id
                             Surface(
                                 onClick = {
@@ -161,7 +197,7 @@ fun ShivAiCoreDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 // Input Query & Run Button
                 OutlinedTextField(
@@ -204,14 +240,14 @@ fun ShivAiCoreDialog(
                     Icon(Icons.Default.PlayArrow, contentDescription = null, tint = CyberVoid, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = if (isExecuting) "निष्पादित हो रहा है..." else "टूल निष्पादित करें (Execute)",
+                        text = if (isExecuting) "निष्पादित हो रहा है..." else "निष्पादित करें (Execute)",
                         color = CyberVoid,
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp
                     )
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 // Output Screen
                 Text("आउटपुट व रिपोर्ट:", color = TextSecondary, fontSize = 11.sp)
@@ -236,7 +272,7 @@ fun ShivAiCoreDialog(
                         )
                     } else {
                         Text(
-                            text = "यहाँ टूल का ऑटोनॉमस विश्लेषण परिणाम दिखेगा...",
+                            text = "यहाँ टूल/स्किल का ऑटोनॉमस विश्लेषण परिणाम दिखेगा...",
                             color = TextMuted,
                             fontSize = 11.sp
                         )

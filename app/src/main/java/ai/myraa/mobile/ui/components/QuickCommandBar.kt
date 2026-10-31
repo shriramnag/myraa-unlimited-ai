@@ -2,22 +2,20 @@ package ai.myraa.mobile.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ai.myraa.mobile.ui.theme.*
@@ -57,7 +55,7 @@ fun QuickCommandBar(
             )
             SuggestionChip(
                 onClick = onOpenShivCore,
-                label = { Text("🔱 11 ऑटोनॉमस टूल्स", fontSize = 10.sp, color = AmberGold) },
+                label = { Text("🔱 11 टूल्स & YT स्किल्स", fontSize = 10.sp, color = AmberGold) },
                 colors = SuggestionChipDefaults.suggestionChipColors(containerColor = CyberCard),
                 border = BorderStroke(1.dp, AmberGold.copy(alpha = 0.4f)),
                 shape = RoundedCornerShape(12.dp),
@@ -73,7 +71,7 @@ fun QuickCommandBar(
             )
             SuggestionChip(
                 onClick = onOpenApps,
-                label = { Text("📱 ऐप्स & डायलर", fontSize = 10.sp, color = SkyCyan) },
+                label = { Text("📱 ऐप्स", fontSize = 10.sp, color = SkyCyan) },
                 colors = SuggestionChipDefaults.suggestionChipColors(containerColor = CyberCard),
                 border = BorderStroke(1.dp, SkyCyan.copy(alpha = 0.4f)),
                 shape = RoundedCornerShape(12.dp),
@@ -91,24 +89,43 @@ fun QuickCommandBar(
 
         Spacer(modifier = Modifier.height(6.dp))
 
-        // Input Box and Action Buttons
+        // Direct One-Touch Master Mic & Cleanly Expanded Command Bar
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            // Single Master Voice Input Mic Button
+            IconButton(
+                onClick = onVoiceClick,
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(CyberCardLight)
+                    .border(1.dp, CelestialBlue.copy(alpha = 0.4f), RoundedCornerShape(16.dp))
+                    .testTag("voice_mic_button")
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Mic,
+                    contentDescription = "Master Voice Input",
+                    tint = CelestialBlue,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+
+            // Expanded Input Field
             OutlinedTextField(
                 value = inputText,
                 onValueChange = onInputChange,
                 placeholder = {
                     Text(
-                        text = "निर्देश या प्रश्न पूछें (हिंदी/English)...",
+                        text = "बोलें या टाइप करें (उदा: 'यूट्यूब स्क्रिप्ट', 'डीप रिसर्च')...",
                         color = TextMuted,
-                        fontSize = 12.sp
+                        fontSize = 11.sp
                     )
                 },
                 singleLine = true,
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = CelestialBlue,
                     unfocusedBorderColor = CyberBorder,
@@ -122,24 +139,7 @@ fun QuickCommandBar(
                     .testTag("command_input_field")
             )
 
-            // Voice Mic Button
-            IconButton(
-                onClick = onVoiceClick,
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(CyberCardLight)
-                    .testTag("voice_mic_button")
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Mic,
-                    contentDescription = "Voice Input",
-                    tint = CelestialBlue,
-                    modifier = Modifier.size(22.dp)
-                )
-            }
-
-            // Send Button
+            // Unclipped 48dp Send Button
             IconButton(
                 onClick = {
                     if (inputText.isNotBlank()) {
@@ -149,12 +149,12 @@ fun QuickCommandBar(
                 enabled = inputText.isNotBlank(),
                 modifier = Modifier
                     .size(48.dp)
-                    .clip(CircleShape)
+                    .clip(RoundedCornerShape(16.dp))
                     .background(if (inputText.isNotBlank()) CelestialBlue else CyberCardLight)
                     .testTag("submit_command_button")
             ) {
                 Icon(
-                    imageVector = Icons.Default.Send,
+                    imageVector = Icons.AutoMirrored.Filled.Send,
                     contentDescription = "Send",
                     tint = if (inputText.isNotBlank()) CyberVoid else TextMuted,
                     modifier = Modifier.size(20.dp)

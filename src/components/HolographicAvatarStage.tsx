@@ -117,21 +117,37 @@ export const HolographicAvatarStage: React.FC<Props> = ({
   onToggleCameraMode,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [videoFailed, setVideoFailed] = React.useState(false);
+  const [imgFailed, setImgFailed] = React.useState(false);
   const theme = ROLE_THEMES[activeRole] || ROLE_THEMES.MYRAA;
   const currentVideoSrc = cameraMode === "FULL" ? theme.fullVideo : theme.closeupVideo;
 
-  // Handle Video Lip-Sync playback
+  useEffect(() => {
+    setVideoFailed(false);
+    setImgFailed(false);
+  }, [activeRole, cameraMode]);
+
+  // Handle Video Lip-Sync playback with safe WebView guards
   useEffect(() => {
     const vid = videoRef.current;
-    if (!vid) return;
-    if (isSpeaking) {
-      vid.playbackRate = 1.15;
-      vid.play().catch(() => {});
-    } else {
-      vid.pause();
-      vid.currentTime = 0.2;
+    if (!vid || videoFailed) return;
+    try {
+      if (isSpeaking) {
+        vid.playbackRate = 1.15;
+        const playPromise = vid.play();
+        if (playPromise && typeof playPromise.catch === "function") {
+          playPromise.catch(() => {});
+        }
+      } else {
+        vid.pause();
+        if (vid.readyState >= 1) {
+          vid.currentTime = 0.2;
+        }
+      }
+    } catch {
+      // Safe fallback for WebViews before metadata is ready
     }
-  }, [isSpeaking, currentVideoSrc]);
+  }, [isSpeaking, currentVideoSrc, videoFailed]);
 
   return (
     <div className="relative flex flex-col items-center justify-center w-full px-2 pt-2 select-none">
@@ -146,19 +162,43 @@ export const HolographicAvatarStage: React.FC<Props> = ({
           style={{ background: `radial-gradient(circle at 50% 50%, ${theme.hex}, transparent 75%)` }}
         />
 
-        {/* Video / Avatar Surface */}
+        {/* Video / Avatar Surface with Graceful Fallback */}
         <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
-          <video
-            ref={videoRef}
-            src={currentVideoSrc}
-            poster={theme.thumb}
-            playsInline
-            muted
-            loop
-            className={`w-full h-full object-cover transition-transform duration-300 ${
-              isSpeaking ? "scale-105" : "scale-100"
-            }`}
-          />
+          {!videoFailed ? (
+            <video
+              ref={videoRef}
+              src={currentVideoSrc}
+              poster={theme.thumb}
+              playsInline
+              muted
+              loop
+              preload="metadata"
+              onError={() => setVideoFailed(true)}
+              className={`w-full h-full object-cover transition-transform duration-300 ${
+                isSpeaking ? "scale-105" : "scale-100"
+              }`}
+            />
+          ) : !imgFailed ? (
+            <img
+              src={theme.thumb}
+              alt={theme.name}
+              onError={() => setImgFailed(true)}
+              className={`w-full h-full object-cover transition-transform duration-300 ${
+                isSpeaking ? "scale-105" : "scale-100"
+              }`}
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center p-6 text-center">
+              <div
+                className="w-20 h-20 rounded-full flex items-center justify-center border-2 mb-2 shadow-lg"
+                style={{ borderColor: theme.hex, backgroundColor: "rgba(15, 23, 42, 0.9)" }}
+              >
+                <Sparkles className="w-8 h-8" style={{ color: theme.hex }} />
+              </div>
+              <span className="text-sm font-bold text-white">{theme.badge}</span>
+              <span className="text-[10px] text-slate-400">{theme.hindiTitle}</span>
+            </div>
+          )}
         </div>
 
         {/* Top-Right: Camera Mode Toggle */}

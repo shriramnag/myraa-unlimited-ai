@@ -55,21 +55,51 @@ export function App() {
   const [isApkDoctorOpen, setIsApkDoctorOpen] = useState(false);
   const [isPhoneFrameMode, setIsPhoneFrameMode] = useState(true);
 
-  // Tasks & Device State
-  const [tasks, setTasks] = useState<TaskRecord[]>(agentSupervisor.getAllTasks());
-  const [deviceState, setDeviceState] = useState(nativeBridge.getDeviceState());
-  const [voiceLockActive, setVoiceLockActive] = useState(voiceBiometrics.isVoiceLockOn());
+  // Tasks & Device State (Wrapped in safe try-catch hydration to prevent storage boot crashes)
+  const [tasks, setTasks] = useState<TaskRecord[]>(() => {
+    try {
+      return agentSupervisor.getAllTasks();
+    } catch {
+      return [];
+    }
+  });
+  const [deviceState, setDeviceState] = useState(() => {
+    try {
+      return nativeBridge.getDeviceState();
+    } catch {
+      return { flashlightOn: false, batteryLevel: 98, network: "5G VoLTE", wifi: "Active / Secured" };
+    }
+  });
+  const [voiceLockActive, setVoiceLockActive] = useState(() => {
+    try {
+      return voiceBiometrics.isVoiceLockOn();
+    } catch {
+      return true;
+    }
+  });
 
   useEffect(() => {
-    const unsubTasks = agentSupervisor.subscribe((taskList) => {
-      setTasks([...taskList]);
-    });
-    const unsubVoice = voiceBiometrics.subscribe((speaking) => {
-      setIsSpeaking(speaking);
-    });
+    let unsubTasks = () => {};
+    let unsubVoice = () => {};
+    try {
+      unsubTasks = agentSupervisor.subscribe((taskList) => {
+        setTasks([...taskList]);
+      });
+      unsubVoice = voiceBiometrics.subscribe((speaking) => {
+        setIsSpeaking(speaking);
+      });
+      (window as any).onNativeVoiceRecognized = (text: string) => {
+        setIsListening(false);
+        if (text && text.trim()) {
+          handleCommandSubmit(text.trim());
+        }
+      };
+    } catch {}
     return () => {
-      unsubTasks();
-      unsubVoice();
+      try {
+        unsubTasks();
+        unsubVoice();
+      } catch {}
     };
   }, []);
 
@@ -228,6 +258,14 @@ export function App() {
         }
       },
       (err) => {
+        // Fallback to native Android speech recognizer bridge if WebView SpeechRecognition is restricted
+        try {
+          const bridge = (window as any).MyraaNativeBridge;
+          if (bridge && typeof bridge.startVoiceRecognition === "function") {
+            bridge.startVoiceRecognition();
+            return;
+          }
+        } catch {}
         setIsListening(false);
         triggerAssistantResponse(
           "Voice Command",
