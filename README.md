@@ -2,7 +2,7 @@
 
 **निर्माण कर्ता एवं सुप्रीम मालिक (Creator & Supreme Owner):** **Shri Ram Nag (श्री राम नाग)**  
 **आर्किटेक्चर (Architecture):** 100% Native Android (Kotlin + Jetpack Compose + Material Design 3)  
-**वर्ज़न (Version):** `v7.0.36` (Code: 7036)  
+**वर्ज़न (Version):** `v7.0.65` (Code: 7065)  
 
 ---
 

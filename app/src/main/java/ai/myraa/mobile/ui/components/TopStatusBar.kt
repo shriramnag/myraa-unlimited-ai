@@ -69,7 +69,7 @@ fun TopStatusBar(
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "v7.0.36",
+                    text = "v7.0.65",
                     color = CelestialBlue,
                     fontSize = 9.sp,
                     fontWeight = FontWeight.SemiBold

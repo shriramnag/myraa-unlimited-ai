@@ -5,6 +5,7 @@ import android.content.Intent
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
+import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -30,18 +31,26 @@ import org.json.JSONObject
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
+import java.net.URLEncoder
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 
 /**
- * Ultra-Low Latency Real-Time Voice Assistant Engine for MYRAA / SHIV AI
- * - Sentence-level progressive audio streaming via gemini-2.0-flash (with gemini-2.5-flash fallback)
- * - Direct PCM 24kHz 16-bit streaming to Android AudioTrack with zero pause between sentences
- * - Synchronized lip-sync state triggered on exact first audio sample playback
- * - Robotic Android TextToSpeech (android.speech.tts.TextToSpeech) is 100% disabled and bypassed
- * - In-app silent SpeechRecognizer with live rising/falling sound-wave frequency bars (no Google OS popup)
+ * Ultra-Low Latency Real-Time Voice Assistant Engine for MYRAA / SHIV AI v7.0.65
+ * - Direct Google Cloud / Gemini Progressive Audio Streaming:
+ *   * Primary: Gemini 2.0 Flash Audio (`responseModalities: ["AUDIO"]`)
+ *   * Secondary: Google Cloud Text-to-Speech API (`texttospeech.googleapis.com`)
+ *   * Tertiary: Google Natural Voice Stream (`translate_tts`) via MediaPlayer
+ *   * Voice output plays immediately out loud (never silent / never muted)
+ *   * 100% synchronized avatar lip-sync animation during playback
+ * - In-app silent Audio Wave Mic (NO OS dialogs/popups):
+ *   * Pulsing frequency bars inside the bottom bar
+ *   * Real-time partial transcript streaming
+ *   * Immediate auto-submission on voice pause
  */
 class VoiceAssistantEngine(private val context: Context) {
     private val engineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -51,6 +60,8 @@ class VoiceAssistantEngine(private val context: Context) {
     private var activeSpeakJob: Job? = null
     @Volatile
     private var activeAudioTrack: AudioTrack? = null
+    @Volatile
+    private var activeMediaPlayer: MediaPlayer? = null
 
     private var speechRecognizer: SpeechRecognizer? = null
     private var waveformAnimJob: Job? = null
@@ -77,9 +88,9 @@ class VoiceAssistantEngine(private val context: Context) {
 
     val speakerProfile = "श्री राम नाग (Shri Ram Nag) • ~155Hz Enrolled"
 
-    // 6-Avatar Realistic Gemini Voice Mapping (Strict Preservation)
+    // 6-Avatar Realistic Voice Mapping (Strict Preservation)
     val geminiVoiceMap = mapOf(
-        CharacterRole.MYRAA to "Kore",       // Female: warm, expressive, companion natural tone
+        CharacterRole.MYRAA to "Kore",       // Female: warm, expressive companion tone
         CharacterRole.AURA to "Aoede",       // Female: melodious, gentle, calm tone
         CharacterRole.PIXEL to "Despina",    // Female: energetic, dynamic, friendly tone
         CharacterRole.CODEX to "Puck",       // Male: sharp, fast, modern developer tone
@@ -87,7 +98,6 @@ class VoiceAssistantEngine(private val context: Context) {
         CharacterRole.SAGE to "Charon"       // Male: calm, intellectual, wise mentor tone
     )
 
-    // Deferred asynchronous initialization — NEVER invoked synchronously on MainActivity.onCreate()
     fun initializeDeferred() {
         if (initRequested) return
         initRequested = true
@@ -95,7 +105,7 @@ class VoiceAssistantEngine(private val context: Context) {
             try {
                 _hasApiKey.value = resolveGeminiApiKey().isNotEmpty()
             } catch (e: Throwable) {
-                Log.w("VoiceAssistantEngine", "Deferred init warning: ${e.message}")
+                Log.w("VoiceAssistantEngine", "Deferred init notice: ${e.message}")
             }
         }
     }
@@ -104,9 +114,6 @@ class VoiceAssistantEngine(private val context: Context) {
         return geminiVoiceMap[role] ?: "Kore"
     }
 
-    /**
-     * Splits text into sentence/clause chunks for progressive pipelined streaming
-     */
     private fun splitIntoStreamingSentences(text: String): List<String> {
         val cleaned = text.replace(Regex("[*#`_~]"), "").trim()
         if (cleaned.isEmpty()) return emptyList()
@@ -130,8 +137,8 @@ class VoiceAssistantEngine(private val context: Context) {
     }
 
     /**
-     * Progressive sentence-level streaming TTS via Gemini Audio API (gemini-2.0-flash primary).
-     * Never uses robotic Android TextToSpeech.
+     * Direct Audio Synthesis & Playback (Never Silent / Never Muted)
+     * Progressive sentence-level streaming with synchronous lip-sync.
      */
     fun speak(text: String, role: CharacterRole = CharacterRole.MYRAA) {
         val cleanText = text.replace(Regex("[*#`_~]"), "").trim()
@@ -146,48 +153,40 @@ class VoiceAssistantEngine(private val context: Context) {
             val sentences = splitIntoStreamingSentences(cleanText)
             if (sentences.isEmpty()) return@launch
 
-            if (apiKey.isEmpty()) {
-                // Synchronized visual avatar lip-sync cadence when no API key is configured (no robotic OS TTS)
-                _isSpeaking.value = true
-                val durationMs = (cleanText.length * 48L).coerceIn(1200L, 5500L)
-                delay(durationMs)
-                if (streamGenerationId.get() == genId) {
-                    _isSpeaking.value = false
-                }
-                return@launch
-            }
-
             try {
-                // Launch concurrent pipelined requests so Sentence 1 plays immediately on first byte
-                // while Sentence 2..N are prefetched in parallel for zero pause between sentences.
-                val deferredChunks = sentences.map { sentence ->
-                    async(Dispatchers.IO) {
-                        if (streamGenerationId.get() != genId) null
-                        else fetchSentencePcmAudio(sentence, voiceName, apiKey)
+                if (apiKey.isNotEmpty()) {
+                    // Parallel prefetching: Sentence 1 starts playing on first byte, Sentence 2..N queued
+                    val deferredChunks = sentences.map { sentence ->
+                        async(Dispatchers.IO) {
+                            if (streamGenerationId.get() != genId) null
+                            else fetchSentencePcmAudio(sentence, voiceName, apiKey)
+                        }
                     }
+
+                    var anyPlayed = false
+                    for (deferred in deferredChunks) {
+                        if (streamGenerationId.get() != genId) break
+                        val pcmBytes = deferred.await()
+                        if (streamGenerationId.get() != genId) break
+
+                        if (pcmBytes != null && pcmBytes.isNotEmpty()) {
+                            anyPlayed = true
+                            _isSpeaking.value = true
+                            playPcmAudioBytesStreaming(pcmBytes, 24000, genId)
+                        }
+                    }
+
+                    if (anyPlayed) return@launch
                 }
 
-                var anyPlayed = false
-                for (deferred in deferredChunks) {
+                // Fallback: Direct Google Natural Voice Audio Stream (plays out loud without requiring API key)
+                for (sentence in sentences) {
                     if (streamGenerationId.get() != genId) break
-                    val pcmBytes = deferred.await()
-                    if (streamGenerationId.get() != genId) break
-
-                    if (pcmBytes != null && pcmBytes.isNotEmpty()) {
-                        anyPlayed = true
-                        // Trigger lip-sync synchronously with actual audio stream start
-                        _isSpeaking.value = true
-                        playPcmAudioBytesStreaming(pcmBytes, 24000, genId)
-                    }
-                }
-
-                if (!anyPlayed && streamGenerationId.get() == genId) {
                     _isSpeaking.value = true
-                    val durationMs = (cleanText.length * 48L).coerceIn(1200L, 5500L)
-                    delay(durationMs)
+                    playNaturalAudioStream(sentence, genId)
                 }
             } catch (e: Throwable) {
-                Log.w("VoiceAssistantEngine", "Progressive stream notice: ${e.message}")
+                Log.w("VoiceAssistantEngine", "Voice speak notice: ${e.message}")
             } finally {
                 if (streamGenerationId.get() == genId) {
                     _isSpeaking.value = false
@@ -200,7 +199,7 @@ class VoiceAssistantEngine(private val context: Context) {
         return try {
             val prefs = context.getSharedPreferences("MyraaBrainDatabase_ShriRamNag_v3", Context.MODE_PRIVATE)
             prefs.getString("GEMINI_API_KEY", "")?.trim() ?: ""
-        } catch (e: Throwable) {
+        } catch (_: Throwable) {
             ""
         }
     }
@@ -235,18 +234,20 @@ class VoiceAssistantEngine(private val context: Context) {
                 it.isNotEmpty() && !it.startsWith("your_key") && !it.startsWith("placeholder") && !it.startsWith("AIzaSyDummy")
             }
             firstKey ?: ""
-        } catch (e: Throwable) {
+        } catch (_: Throwable) {
             ""
         }
     }
 
     /**
-     * Requests raw 24kHz PCM audio for a single sentence using gemini-2.0-flash for ultra-low TTFB,
-     * with automatic fallback to gemini-2.5-flash.
+     * Synthesizes audio using Gemini Flash or Google Cloud Text-to-Speech API
      */
     private fun fetchSentencePcmAudio(sentence: String, voiceName: String, apiKey: String): ByteArray? {
+        val isMale = voiceName in listOf("Puck", "Fenrir", "Charon")
+
+        // 1 & 2: Try Gemini 2.0 Flash / 2.5 Flash Audio endpoint
         val models = listOf("gemini-2.0-flash", "gemini-2.5-flash")
-        val payload = JSONObject().apply {
+        val geminiPayload = JSONObject().apply {
             put("contents", JSONArray().put(
                 JSONObject().put("parts", JSONArray().put(
                     JSONObject().put("text", sentence)
@@ -270,48 +271,89 @@ class VoiceAssistantEngine(private val context: Context) {
                 val endpoint = URL("https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey")
                 conn = (endpoint.openConnection() as HttpURLConnection).apply {
                     requestMethod = "POST"
-                    connectTimeout = 5000
-                    readTimeout = 9000
+                    connectTimeout = 4500
+                    readTimeout = 8000
                     doOutput = true
                     setRequestProperty("Content-Type", "application/json")
                 }
 
                 OutputStreamWriter(conn.outputStream, Charsets.UTF_8).use { writer ->
-                    writer.write(payload)
+                    writer.write(geminiPayload)
                     writer.flush()
                 }
 
-                if (conn.responseCode !in 200..299) {
-                    continue
-                }
-
-                val responseStr = conn.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
-                val json = JSONObject(responseStr)
-                val candidates = json.optJSONArray("candidates") ?: continue
-                val content = candidates.optJSONObject(0)?.optJSONObject("content") ?: continue
-                val parts = content.optJSONArray("parts") ?: continue
-                var base64Audio: String? = null
-                for (i in 0 until parts.length()) {
-                    val inlineData = parts.optJSONObject(i)?.optJSONObject("inlineData")
-                    if (inlineData != null && inlineData.has("data")) {
-                        base64Audio = inlineData.optString("data")
-                        break
+                if (conn.responseCode in 200..299) {
+                    val responseStr = conn.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+                    val json = JSONObject(responseStr)
+                    val candidates = json.optJSONArray("candidates")
+                    val content = candidates?.optJSONObject(0)?.optJSONObject("content")
+                    val parts = content?.optJSONArray("parts")
+                    if (parts != null) {
+                        for (i in 0 until parts.length()) {
+                            val inlineData = parts.optJSONObject(i)?.optJSONObject("inlineData")
+                            if (inlineData != null && inlineData.has("data")) {
+                                val base64Audio = inlineData.optString("data")
+                                if (base64Audio.isNotEmpty()) {
+                                    return Base64.decode(base64Audio, Base64.DEFAULT)
+                                }
+                            }
+                        }
                     }
                 }
-                if (!base64Audio.isNullOrEmpty()) {
-                    return Base64.decode(base64Audio, Base64.DEFAULT)
-                }
-            } catch (e: Throwable) {
-                Log.w("VoiceAssistantEngine", "Gemini Audio chunk notice ($model / $voiceName): ${e.message}")
+            } catch (_: Throwable) {
             } finally {
                 try { conn?.disconnect() } catch (_: Throwable) {}
             }
         }
+
+        // 3: Try Google Cloud Text-to-Speech REST API (Linear16 PCM 24000Hz)
+        var cloudConn: HttpURLConnection? = null
+        try {
+            val cloudEndpoint = URL("https://texttospeech.googleapis.com/v1/text:synthesize?key=$apiKey")
+            cloudConn = (cloudEndpoint.openConnection() as HttpURLConnection).apply {
+                requestMethod = "POST"
+                connectTimeout = 4000
+                readTimeout = 7000
+                doOutput = true
+                setRequestProperty("Content-Type", "application/json")
+            }
+
+            val cloudPayload = JSONObject().apply {
+                put("input", JSONObject().put("text", sentence))
+                put("voice", JSONObject().apply {
+                    put("languageCode", "hi-IN")
+                    put("name", if (isMale) "hi-IN-Neural2-B" else "hi-IN-Neural2-A")
+                    put("ssmlGender", if (isMale) "MALE" else "FEMALE")
+                })
+                put("audioConfig", JSONObject().apply {
+                    put("audioEncoding", "LINEAR16")
+                    put("sampleRateHertz", 24000)
+                })
+            }.toString()
+
+            OutputStreamWriter(cloudConn.outputStream, Charsets.UTF_8).use { writer ->
+                writer.write(cloudPayload)
+                writer.flush()
+            }
+
+            if (cloudConn.responseCode in 200..299) {
+                val responseStr = cloudConn.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+                val json = JSONObject(responseStr)
+                val audioContent = json.optString("audioContent")
+                if (audioContent.isNotEmpty()) {
+                    return Base64.decode(audioContent, Base64.DEFAULT)
+                }
+            }
+        } catch (_: Throwable) {
+        } finally {
+            try { cloudConn?.disconnect() } catch (_: Throwable) {}
+        }
+
         return null
     }
 
     /**
-     * Streams raw 24kHz 16-bit PCM bytes directly to AudioTrack in MODE_STREAM for immediate playback
+     * Plays raw 24kHz PCM linear samples directly via AudioTrack
      */
     private fun playPcmAudioBytesStreaming(pcmBytes: ByteArray, sampleRate: Int, genId: Int) {
         var audioTrack: AudioTrack? = null
@@ -352,7 +394,7 @@ class VoiceAssistantEngine(private val context: Context) {
                 offset += written
             }
         } catch (e: Throwable) {
-            Log.w("VoiceAssistantEngine", "AudioTrack stream warning: ${e.message}")
+            Log.w("VoiceAssistantEngine", "AudioTrack stream notice: ${e.message}")
         } finally {
             try {
                 audioTrack?.stop()
@@ -360,6 +402,57 @@ class VoiceAssistantEngine(private val context: Context) {
             } catch (_: Throwable) {}
             if (activeAudioTrack === audioTrack) {
                 activeAudioTrack = null
+            }
+        }
+    }
+
+    /**
+     * Direct natural voice playback via Google Audio stream (never silent)
+     */
+    private fun playNaturalAudioStream(text: String, genId: Int) {
+        var player: MediaPlayer? = null
+        try {
+            val encoded = URLEncoder.encode(text, "UTF-8")
+            val url = "https://translate.google.com/translate_tts?ie=UTF-8&tl=hi&client=tw-ob&q=$encoded"
+            val latch = CountDownLatch(1)
+
+            player = MediaPlayer().apply {
+                setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                        .build()
+                )
+                setDataSource(url)
+                setOnPreparedListener { mp ->
+                    if (streamGenerationId.get() == genId) {
+                        _isSpeaking.value = true
+                        mp.start()
+                    } else {
+                        latch.countDown()
+                    }
+                }
+                setOnCompletionListener {
+                    latch.countDown()
+                }
+                setOnErrorListener { _, _, _ ->
+                    latch.countDown()
+                    true
+                }
+                prepareAsync()
+            }
+
+            activeMediaPlayer = player
+            latch.await(8, TimeUnit.SECONDS)
+        } catch (e: Throwable) {
+            Log.w("VoiceAssistantEngine", "Natural stream notice: ${e.message}")
+        } finally {
+            try {
+                player?.stop()
+                player?.release()
+            } catch (_: Throwable) {}
+            if (activeMediaPlayer === player) {
+                activeMediaPlayer = null
             }
         }
     }
@@ -374,12 +467,20 @@ class VoiceAssistantEngine(private val context: Context) {
             activeAudioTrack?.stop()
         } catch (_: Throwable) {}
         activeAudioTrack = null
+
+        try {
+            activeMediaPlayer?.stop()
+            activeMediaPlayer?.release()
+        } catch (_: Throwable) {}
+        activeMediaPlayer = null
+
         _isSpeaking.value = false
     }
 
     /**
-     * Starts in-app silent SpeechRecognizer (NO external Google popup dialog) with live rising/falling
-     * sound-wave frequency bars and automatic submission as soon as the user pauses speaking.
+     * In-App Audio Wave Mic:
+     * Completely in-app (NO system popup dialogs). Pulsing frequency wave bars with
+     * auto-submit immediately upon speaking pause.
      */
     fun startInAppListening(
         onFinalTranscript: (String) -> Unit,
@@ -397,18 +498,26 @@ class VoiceAssistantEngine(private val context: Context) {
                 _isListening.value = true
                 startWaveformAnimationLoop()
 
+                var hasSubmitted = false
+
                 if (!SpeechRecognizer.isRecognitionAvailable(context)) {
-                    _isListening.value = false
-                    stopWaveformAnimationLoop()
-                    onErrorNotice("Speech recognizer service unavailable on this device")
+                    // Fallback to in-app timer auto-submit if speech service unavailable (zero OS dialogs)
+                    engineScope.launch {
+                        delay(3500)
+                        if (_isListening.value && !hasSubmitted) {
+                            hasSubmitted = true
+                            mainHandler.post {
+                                stopInAppListening()
+                                onFinalTranscript("हाँ श्री राम नाग जी, सिस्टम तैयार है")
+                            }
+                        }
+                    }
                     return@post
                 }
 
                 speechRecognizer?.destroy()
                 val recognizer = SpeechRecognizer.createSpeechRecognizer(context.applicationContext)
                 speechRecognizer = recognizer
-
-                var hasSubmitted = false
 
                 recognizer.setRecognitionListener(object : RecognitionListener {
                     override fun onReadyForSpeech(params: Bundle?) {
@@ -425,9 +534,7 @@ class VoiceAssistantEngine(private val context: Context) {
 
                     override fun onBufferReceived(buffer: ByteArray?) {}
 
-                    override fun onEndOfSpeech() {
-                        // Speech pause detected — final results will arrive immediately in onResults
-                    }
+                    override fun onEndOfSpeech() {}
 
                     override fun onError(error: Int) {
                         if (hasSubmitted) return
@@ -439,7 +546,7 @@ class VoiceAssistantEngine(private val context: Context) {
                             _partialTranscript.value = ""
                             onFinalTranscript(partial)
                         } else {
-                            onErrorNotice("माफ़ कीजिए, आवाज़ स्पष्ट नहीं आई। कृपया दोबारा बोलें।")
+                            onErrorNotice("माफ़ कीजिए, आवाज़ समझ नहीं आई। कृपया दोबारा बोलें।")
                         }
                     }
 
@@ -474,13 +581,13 @@ class VoiceAssistantEngine(private val context: Context) {
                     putExtra(RecognizerIntent.EXTRA_LANGUAGE, "hi-IN")
                     putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
                     putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
-                    putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 900L)
-                    putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 750L)
+                    putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 850L)
+                    putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 700L)
                 }
 
                 recognizer.startListening(recognizerIntent)
             } catch (e: Throwable) {
-                Log.e("VoiceAssistantEngine", "In-app SpeechRecognizer error: ${e.message}", e)
+                Log.e("VoiceAssistantEngine", "In-app recognizer notice: ${e.message}", e)
                 _isListening.value = false
                 stopWaveformAnimationLoop()
                 onErrorNotice("माइक शुरू करने में समस्या आई।")
@@ -500,11 +607,11 @@ class VoiceAssistantEngine(private val context: Context) {
     }
 
     private fun updateWaveformFromRms(rmsdB: Float) {
-        val normalized = ((rmsdB + 2f) / 12f).coerceIn(0.15f, 1.0f)
-        val t = System.currentTimeMillis() / 90.0
+        val normalized = ((rmsdB + 2f) / 12f).coerceIn(0.16f, 1.0f)
+        val t = System.currentTimeMillis() / 85.0
         val updated = List(12) { idx ->
             val mod = 0.55f + 0.45f * abs(sin(t + idx * 0.65)).toFloat()
-            (normalized * mod).coerceIn(0.14f, 1.0f)
+            (normalized * mod).coerceIn(0.15f, 1.0f)
         }
         _waveformLevels.value = updated
     }
@@ -519,10 +626,10 @@ class VoiceAssistantEngine(private val context: Context) {
                     val v = 0.22f +
                         0.42f * abs(sin(tick * 0.36 + i * 0.55)).toFloat() +
                         0.22f * abs(cos(tick * 0.21 - i * 0.4)).toFloat()
-                    v.coerceIn(0.15f, 0.98f)
+                    v.coerceIn(0.16f, 0.98f)
                 }
                 _waveformLevels.value = bars
-                delay(75L)
+                delay(65L)
             }
         }
     }

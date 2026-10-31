@@ -144,7 +144,7 @@ class BrainDatabaseRepository(private val context: Context) {
 
     fun exportBackupJson(): String {
         val root = JSONObject()
-        root.put("appName", "MYRAA v7.0.36 / SHIV AI")
+        root.put("appName", "MYRAA v7.0.65 / SHIV AI")
         root.put("databaseName", "MyraaBrainDatabase_ShriRamNag")
         root.put("owner", "Shri Ram Nag (श्री राम नाग)")
         root.put("exportedAt", SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date()))

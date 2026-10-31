@@ -272,13 +272,6 @@ export function App() {
         }
       },
       (err) => {
-        try {
-          const bridge = (window as any).MyraaNativeBridge;
-          if (bridge && typeof bridge.startVoiceRecognition === "function") {
-            bridge.startVoiceRecognition();
-            return;
-          }
-        } catch {}
         setIsListening(false);
         triggerAssistantResponse(
           "Voice Command",
@@ -333,7 +326,7 @@ export function App() {
           >
             <Sparkles className="w-3 h-3 text-sky-400 shrink-0" />
             <span className="font-bold text-white text-[10px] tracking-tight">SHIV AI</span>
-            <span className="text-[8px] font-mono text-sky-400">v7.0.36</span>
+            <span className="text-[8px] font-mono text-sky-400">v7.0.65</span>
             <span className="text-slate-600 text-[10px]">|</span>
             <span className="text-[9px] font-medium text-emerald-400 truncate max-w-[150px]">श्री राम नाग</span>
           </div>

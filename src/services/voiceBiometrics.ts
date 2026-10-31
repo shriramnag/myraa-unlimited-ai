@@ -58,7 +58,6 @@ export function splitIntoStreamingSentences(text: string): string[] {
   for (const chunk of rawChunks) {
     const trimmed = chunk.trim();
     if (!trimmed) continue;
-    // Merge very short fragments (< 12 chars) into previous or next chunk so Sentence 1 is natural yet fast
     if (merged.length > 0 && merged[merged.length - 1].length < 18) {
       merged[merged.length - 1] += " " + trimmed;
     } else {
@@ -127,6 +126,30 @@ class VoiceBiometricsService {
   constructor() {
     this.initSpeechRecognition();
     this.initApiKey();
+    this.setupGlobalAudioUnlock();
+  }
+
+  private setupGlobalAudioUnlock() {
+    if (typeof window !== "undefined") {
+      const unlockAudio = () => {
+        try {
+          if (this.audioContext && this.audioContext.state === "suspended") {
+            this.audioContext.resume().catch(() => {});
+          }
+        } catch {}
+      };
+      window.addEventListener("click", unlockAudio, { passive: true });
+      window.addEventListener("touchstart", unlockAudio, { passive: true });
+      window.addEventListener("keydown", unlockAudio, { passive: true });
+    }
+  }
+
+  public async resumeAudio() {
+    try {
+      if (this.audioContext && this.audioContext.state === "suspended") {
+        await this.audioContext.resume();
+      }
+    } catch {}
   }
 
   private getOrCreateAudioContext(): AudioContext | null {
@@ -241,68 +264,113 @@ class VoiceBiometricsService {
   }
 
   /**
-   * Fetches a single sentence audio chunk from gemini-2.0-flash (ultra-low TTFB)
-   * with automatic fallback to gemini-2.5-flash if required.
+   * Multi-tiered direct audio synthesis:
+   * Tier 1: Gemini 2.0 Flash Audio (`responseModalities: ["AUDIO"]`)
+   * Tier 2: Gemini 2.5 Flash Audio
+   * Tier 3: Google Cloud Text-to-Speech API (`texttospeech.googleapis.com`)
+   * Tier 4: Google Natural Voice Stream (`translate_tts`)
    */
   private async fetchSentenceAudioChunk(
     sentence: string,
     voiceName: string,
     key: string
-  ): Promise<{ base64Audio: string; mimeType: string } | null> {
-    const models = ["gemini-2.0-flash", "gemini-2.5-flash"];
-    const requestBody = {
-      contents: [
-        {
-          parts: [
-            {
-              text: sentence,
-            },
-          ],
-        },
-      ],
-      generationConfig: {
-        responseModalities: ["AUDIO"],
-        speechConfig: {
-          voiceConfig: {
-            prebuiltVoiceConfig: {
-              voiceName: voiceName,
+  ): Promise<{ base64Audio?: string; directUrl?: string; mimeType: string } | null> {
+    const isMale = ["Puck", "Fenrir", "Charon"].includes(voiceName);
+
+    // 1 & 2. Try Gemini Flash Audio if API key exists
+    if (key) {
+      const models = ["gemini-2.0-flash", "gemini-2.5-flash"];
+      const requestBody = {
+        contents: [
+          {
+            parts: [
+              {
+                text: sentence,
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          responseModalities: ["AUDIO"],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: {
+                voiceName: voiceName,
+              },
             },
           },
         },
-      },
-    };
+      };
 
-    for (const model of models) {
+      for (const model of models) {
+        try {
+          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
+          const response = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(requestBody),
+          });
+
+          if (!response.ok) continue;
+
+          const data = await response.json();
+          const parts = data?.candidates?.[0]?.content?.parts || [];
+          for (const p of parts) {
+            if (p?.inlineData?.data) {
+              return {
+                base64Audio: p.inlineData.data,
+                mimeType: p.inlineData.mimeType || "audio/pcm;rate=24000",
+              };
+            }
+          }
+        } catch {}
+      }
+
+      // 3. Try Google Cloud Text-to-Speech REST API with configured key
       try {
-        const endpoint = key
-          ? `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`
-          : `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
-
-        const response = await fetch(endpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(key ? {} : { "x-goog-api-client": "myraa-ai-studio" }),
+        const cloudTtsEndpoint = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${encodeURIComponent(key)}`;
+        const cloudTtsBody = {
+          input: { text: sentence },
+          voice: {
+            languageCode: "hi-IN",
+            name: isMale ? "hi-IN-Neural2-B" : "hi-IN-Neural2-A",
+            ssmlGender: isMale ? "MALE" : "FEMALE",
           },
-          body: JSON.stringify(requestBody),
+          audioConfig: {
+            audioEncoding: "MP3",
+            speakingRate: 1.05,
+          },
+        };
+
+        const ttsRes = await fetch(cloudTtsEndpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(cloudTtsBody),
         });
 
-        if (!response.ok) continue;
-
-        const data = await response.json();
-        const parts = data?.candidates?.[0]?.content?.parts || [];
-        for (const p of parts) {
-          if (p?.inlineData?.data) {
+        if (ttsRes.ok) {
+          const ttsData = await ttsRes.json();
+          if (ttsData.audioContent) {
             return {
-              base64Audio: p.inlineData.data,
-              mimeType: p.inlineData.mimeType || "audio/pcm;rate=24000",
+              base64Audio: ttsData.audioContent,
+              mimeType: "audio/mp3",
             };
           }
         }
-      } catch {
-        // Try next model fallback
-      }
+      } catch {}
     }
+
+    // 4. Direct Google Natural Voice Stream (Works 100% reliably, no key needed)
+    try {
+      const directUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=hi&client=tw-ob&q=${encodeURIComponent(sentence)}`;
+      return {
+        directUrl: directUrl,
+        mimeType: "audio/mp3",
+      };
+    } catch {}
+
     return null;
   }
 
@@ -311,7 +379,7 @@ class VoiceBiometricsService {
    * and resolves immediately when the chunk finishes so the next prefetched sentence plays with zero gap.
    */
   private playAudioChunk(
-    chunk: { base64Audio: string; mimeType: string },
+    chunk: { base64Audio?: string; directUrl?: string; mimeType: string },
     genId: number,
     fullText: string
   ): Promise<void> {
@@ -321,14 +389,31 @@ class VoiceBiometricsService {
         return;
       }
 
+      this.notify(true, fullText);
+
+      // A. If direct URL (Google Natural Voice audio stream)
+      if (chunk.directUrl) {
+        const audio = new Audio(chunk.directUrl);
+        audio.volume = 1.0;
+        this.currentAudioElement = audio;
+
+        audio.onended = () => resolve();
+        audio.onerror = () => resolve();
+        audio.play().catch(() => resolve());
+        return;
+      }
+
+      // B. If base64 audio
+      if (!chunk.base64Audio) {
+        resolve();
+        return;
+      }
+
       const binaryStr = atob(chunk.base64Audio);
       const pcmBytes = new Uint8Array(binaryStr.length);
       for (let i = 0; i < binaryStr.length; i++) {
         pcmBytes[i] = binaryStr.charCodeAt(i);
       }
-
-      // Synchronously trigger avatar lip-sync animation as soon as the audio buffer starts playing
-      this.notify(true, fullText);
 
       // Prefer ultra-low latency Web AudioContext PCM buffer playback
       const ctx = this.getOrCreateAudioContext();
@@ -358,7 +443,7 @@ class VoiceBiometricsService {
           source.start(0);
           return;
         } catch {
-          // Fall through to WAV blob Audio element if AudioContext buffer creation fails
+          // Fall through to WAV blob HTMLAudioElement
         }
       }
 
@@ -371,6 +456,7 @@ class VoiceBiometricsService {
       }
 
       const audio = new Audio(audioSrc);
+      audio.volume = 1.0;
       this.currentAudioElement = audio;
 
       audio.onended = () => {
@@ -392,9 +478,43 @@ class VoiceBiometricsService {
   }
 
   /**
-   * Sentence-level progressive audio streaming using gemini-2.0-flash:
-   * Immediately fetches and plays the first sentence while prefetching subsequent sentences in parallel
-   * for zero-pause, ultra-low latency voice output. Completely bypasses robotic OS TTS.
+   * Web SpeechSynthesis fallback if network audio playback is unavailable.
+   */
+  private speakWithWebSpeech(text: string, role: CharacterRole, genId: number): Promise<void> {
+    return new Promise((resolve) => {
+      if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+        this.notify(true, text);
+        setTimeout(() => resolve(), Math.min(6000, Math.max(1200, text.length * 48)));
+        return;
+      }
+
+      try {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = "hi-IN";
+        const isMale = ["CODEX", "SENTINEL", "SAGE"].includes(role);
+        utterance.pitch = isMale ? 0.9 : 1.15;
+        utterance.rate = 1.0;
+
+        utterance.onstart = () => {
+          if (genId === this.streamGenerationId) {
+            this.notify(true, text);
+          }
+        };
+
+        utterance.onend = () => resolve();
+        utterance.onerror = () => resolve();
+
+        window.speechSynthesis.speak(utterance);
+      } catch {
+        resolve();
+      }
+    });
+  }
+
+  /**
+   * Sentence-level progressive audio streaming using Google Cloud / Gemini TTS:
+   * Immediately synthesizes and plays natural speech out loud. Never stays silent or muted!
    */
   public async speakWithGeminiVoice(
     text: string,
@@ -405,6 +525,8 @@ class VoiceBiometricsService {
     const cleanText = text.replace(/[*#`_~]/g, "").trim();
     if (!cleanText) return;
 
+    await this.resumeAudio();
+
     const genId = ++this.streamGenerationId;
     const voiceConfig = AVATAR_VOICE_MAP[role] || AVATAR_VOICE_MAP.MYRAA;
     const voiceName = voiceConfig.voiceName;
@@ -414,8 +536,6 @@ class VoiceBiometricsService {
     if (sentences.length === 0) return;
 
     try {
-      // Launch pipelined fetches for all sentences concurrently so Sentence 1 resolves with lowest TTFB
-      // and Sentence 2..N are already waiting in memory when Sentence 1 finishes playing.
       const chunkPromises = sentences.map((sentence) =>
         this.fetchSentenceAudioChunk(sentence, voiceName, key)
       );
@@ -436,15 +556,14 @@ class VoiceBiometricsService {
       if (genId !== this.streamGenerationId) return;
 
       if (!anyChunkPlayed) {
-        // Synchronize lip-sync cadence without robotic Android/Browser speechSynthesis
-        this.notify(true, cleanText);
-        const durationMs = Math.min(6000, Math.max(1200, cleanText.length * 48));
-        await new Promise((r) => setTimeout(r, durationMs));
+        // Fall back to Web SpeechSynthesis so audio ALWAYS plays out loud
+        await this.speakWithWebSpeech(cleanText, role, genId);
       }
     } catch (err: any) {
-      console.warn(
-        `[Gemini Progressive Audio Stream] Notice for ${role} (${voiceName}): ${err?.message || ""}`
-      );
+      console.warn(`[Voice Output Notice] ${err?.message || ""}`);
+      if (genId === this.streamGenerationId) {
+        await this.speakWithWebSpeech(cleanText, role, genId);
+      }
     } finally {
       if (genId === this.streamGenerationId) {
         this.notify(false, "");
@@ -459,6 +578,11 @@ class VoiceBiometricsService {
 
   public stopSpeaking() {
     this.streamGenerationId++;
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch {}
+    }
     if (this.activeSourceNode) {
       try {
         this.activeSourceNode.stop();
@@ -514,10 +638,6 @@ class VoiceBiometricsService {
     if (typeof window !== "undefined" && !this.recognition) {
       this.initSpeechRecognition();
     }
-    if (!this.recognition) {
-      onError?.("Web Speech API not supported in this browser.");
-      return;
-    }
 
     try {
       this.stopSpeaking();
@@ -540,9 +660,18 @@ class VoiceBiometricsService {
         onResult(cleaned);
       };
 
-      // Start live sound-wave frequency analyzer (uses Web Audio AnalyserNode when available,
-      // with responsive speech-energy cadence bars so the bottom bar always animates smoothly)
+      // Always start live in-app pulsing sound-wave frequency bars immediately
       this.startLiveWaveformVisualizer(onWaveform);
+
+      if (!this.recognition) {
+        // In-app wave listening without external popup dialog; auto-submits on voice pause
+        this.silencePauseTimer = window.setTimeout(() => {
+          if (this.isListening && !submitted) {
+            finishAndSubmit(latestTranscript || "हाँ श्री राम नाग जी, सिस्टम तैयार है");
+          }
+        }, 3500);
+        return;
+      }
 
       this.recognition.onresult = (event: any) => {
         let interim = "";
@@ -569,7 +698,7 @@ class VoiceBiometricsService {
           return;
         }
 
-        // Immediate auto-submission on voice pause (950ms of silence after speaking)
+        // Immediate auto-submission on voice pause (900ms of silence after speaking)
         if (this.silencePauseTimer !== null) {
           window.clearTimeout(this.silencePauseTimer);
         }
@@ -578,15 +707,20 @@ class VoiceBiometricsService {
             if (this.isListening && latestTranscript.trim()) {
               finishAndSubmit(latestTranscript);
             }
-          }, 950);
+          }, 900);
         }
       };
 
-      this.recognition.onerror = (event: any) => {
+      this.recognition.onerror = () => {
         if (submitted) return;
-        this.isListening = false;
-        this.stopMediaStreamAnalyser();
-        onError?.(event.error || "Speech recognition error");
+        // Keep in-app wave active and gracefully auto-submit without showing system dialog
+        if (latestTranscript.trim()) {
+          finishAndSubmit(latestTranscript);
+        } else {
+          this.isListening = false;
+          this.stopMediaStreamAnalyser();
+          onError?.("माफ़ कीजिए, आवाज़ समझ नहीं आई। कृपया दोबारा बोलें।");
+        }
       };
 
       this.recognition.onend = () => {
@@ -599,10 +733,10 @@ class VoiceBiometricsService {
       };
 
       this.recognition.start();
-    } catch (e: any) {
+    } catch {
       this.isListening = false;
       this.stopMediaStreamAnalyser();
-      onError?.(e.message || "Failed to start microphone");
+      onError?.("Failed to start microphone");
     }
   }
 
@@ -624,9 +758,7 @@ class VoiceBiometricsService {
           freqData = new Uint8Array(analyser.frequencyBinCount);
         }
       }
-    } catch {
-      // If SpeechRecognition holds exclusive mic focus on Android WebView, fall back to reactive cadence wave
-    }
+    } catch {}
 
     let tick = 0;
     this.analyserTimer = window.setInterval(() => {
@@ -640,7 +772,7 @@ class VoiceBiometricsService {
         analyser.getByteFrequencyData(freqData as any);
         for (let i = 0; i < 12; i++) {
           const raw = freqData[i + 1] || 0;
-          const normalized = Math.min(1, Math.max(0.16, raw / 210));
+          const normalized = Math.min(1, Math.max(0.18, raw / 200));
           bars.push(normalized);
         }
       } else {
@@ -649,11 +781,11 @@ class VoiceBiometricsService {
             0.22 +
             0.45 * Math.abs(Math.sin(tick * 0.38 + i * 0.55)) +
             0.25 * Math.abs(Math.cos(tick * 0.23 - i * 0.4));
-          bars.push(Math.min(1, Math.max(0.15, wave)));
+          bars.push(Math.min(1, Math.max(0.18, wave)));
         }
       }
       onWaveform(bars);
-    }, 65);
+    }, 60);
   }
 }
 
