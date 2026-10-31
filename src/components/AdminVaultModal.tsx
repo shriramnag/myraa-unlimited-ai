@@ -1,175 +1,324 @@
-import React, { useState } from "react";
-import { nativeBridge } from "../services/nativeBridge";
-import { voiceBiometrics } from "../services/voiceBiometrics";
-import { AuditLogItem } from "../types";
-import { ShieldCheck, Lock, Unlock, Key, AlertTriangle, Eye, X, KeyRound } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { X, Lock, ShieldCheck, KeyRound, Trash2, CheckCircle2, AlertTriangle } from "lucide-react";
+import {
+  resolveGeminiApiKey,
+  saveUserGeminiApiKey,
+  validateGeminiApiKey,
+} from "../voice/GeminiConfig";
+import { voiceStore } from "../voice/voiceStore";
 
-interface Props {
+interface AdminVaultModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export const AdminVaultModal: React.FC<Props> = ({ isOpen, onClose }) => {
-  const [passcode, setPasscode] = useState("");
-  const [apiKeyInput, setApiKeyInput] = useState(voiceBiometrics.getApiKey());
+const PASSCODE_HASH_KEY = "MYRAA_ADMIN_PASSCODE_SHA256";
+const VAULT_SECRETS_KEY = "MYRAA_VAULT_SECRETS_V2";
+
+interface VaultSecretItem {
+  id: string;
+  label: string;
+  value: string;
+  updatedAt: number;
+}
+
+async function sha256Hex(input: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(input.trim());
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+export const AdminVaultModal: React.FC<AdminVaultModalProps> = ({ isOpen, onClose }) => {
+  const [hasExistingPasscode, setHasExistingPasscode] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
-  const [savedKeyMsg, setSavedKeyMsg] = useState("");
-  const [logs, setLogs] = useState<AuditLogItem[]>([]);
+  const [passcodeInput, setPasscodeInput] = useState("");
+  const [confirmPasscodeInput, setConfirmPasscodeInput] = useState("");
+  const [authError, setAuthError] = useState("");
+
+  const [geminiKeyInput, setGeminiKeyInput] = useState("");
+  const [keyStatus, setKeyStatus] = useState<string>("");
+  const [isTestingKey, setIsTestingKey] = useState(false);
+
+  const [secrets, setSecrets] = useState<VaultSecretItem[]>([]);
+  const [newLabel, setNewLabel] = useState("");
+  const [newValue, setNewValue] = useState("");
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const savedHash = localStorage.getItem(PASSCODE_HASH_KEY);
+    setHasExistingPasscode(Boolean(savedHash));
+    setIsUnlocked(false);
+    setPasscodeInput("");
+    setConfirmPasscodeInput("");
+    setAuthError("");
+    setGeminiKeyInput(resolveGeminiApiKey());
+    setKeyStatus("");
+
+    try {
+      const raw = localStorage.getItem(VAULT_SECRETS_KEY);
+      if (raw) {
+        setSecrets(JSON.parse(raw));
+      }
+    } catch {
+      setSecrets([]);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const handleUnlock = () => {
-    const trimmed = passcode.trim().toLowerCase();
-    if (trimmed === "1977" || trimmed === "shriramnag" || trimmed === "owner") {
+  const handleSetupPasscode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError("");
+    if (passcodeInput.trim().length < 4) {
+      setAuthError("पासकोड कम से कम 4 अक्षरों या अंकों का होना चाहिए।");
+      return;
+    }
+    if (passcodeInput.trim() !== confirmPasscodeInput.trim()) {
+      setAuthError("दोनों पासकोड मेल नहीं खा रहे हैं।");
+      return;
+    }
+    const hash = await sha256Hex(passcodeInput);
+    localStorage.setItem(PASSCODE_HASH_KEY, hash);
+    setHasExistingPasscode(true);
+    setIsUnlocked(true);
+    setPasscodeInput("");
+    setConfirmPasscodeInput("");
+  };
+
+  const handleUnlock = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError("");
+    const savedHash = localStorage.getItem(PASSCODE_HASH_KEY);
+    if (!savedHash) {
+      setHasExistingPasscode(false);
+      return;
+    }
+    const inputHash = await sha256Hex(passcodeInput);
+    if (inputHash === savedHash) {
       setIsUnlocked(true);
-      setErrorMsg("");
-      setLogs(nativeBridge.getAuditLogs());
+      setPasscodeInput("");
     } else {
-      setErrorMsg("गलत पासकोड! केवल अधिकृत ओनर (श्री राम नाग) ही एक्सेस कर सकते हैं।");
+      setAuthError("गलत पासकोड। कृपया सही पासकोड डालें।");
     }
   };
 
-  const handleSaveApiKey = () => {
-    voiceBiometrics.setApiKey(apiKeyInput);
-    setSavedKeyMsg("✓ Google AI Studio API Key saved successfully!");
-    setTimeout(() => setSavedKeyMsg(""), 3000);
+  const handleSaveGeminiKey = async () => {
+    saveUserGeminiApiKey(geminiKeyInput.trim());
+    voiceStore.refreshApiKeyStatus();
+    setIsTestingKey(true);
+    setKeyStatus("जाँचा जा रहा है...");
+    const res = await validateGeminiApiKey(geminiKeyInput.trim() || undefined);
+    setIsTestingKey(false);
+    setKeyStatus(
+      res.valid
+        ? `सफलतापूर्वक जुड़ा (${res.workingModel})!`
+        : `त्रुटि: ${res.error || "API Key अमान्य है।"}`
+    );
+  };
+
+  const handleAddSecret = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newLabel.trim() || !newValue.trim()) return;
+    const updated: VaultSecretItem[] = [
+      ...secrets,
+      {
+        id: `sec_${Date.now()}`,
+        label: newLabel.trim(),
+        value: newValue.trim(),
+        updatedAt: Date.now(),
+      },
+    ];
+    setSecrets(updated);
+    localStorage.setItem(VAULT_SECRETS_KEY, JSON.stringify(updated));
+    setNewLabel("");
+    setNewValue("");
+  };
+
+  const handleDeleteSecret = (id: string) => {
+    const updated = secrets.filter((s) => s.id !== id);
+    setSecrets(updated);
+    localStorage.setItem(VAULT_SECRETS_KEY, JSON.stringify(updated));
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/85 backdrop-blur-xl animate-in fade-in duration-150">
-      <div className="w-full max-w-[480px] max-h-[85vh] flex flex-col bg-slate-900 border border-emerald-500/40 rounded-3xl shadow-2xl overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 bg-slate-950 border-b border-white/10">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-emerald-400" />
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+      <div className="w-full max-w-lg bg-slate-950 border border-white/15 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90dvh]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-slate-900/60">
+          <div className="flex items-center gap-2.5">
+            <ShieldCheck className="w-5 h-5 text-cyan-400" />
             <div>
-              <div className="text-sm font-bold text-white">एडमिन वॉल्ट & सुरक्षा ऑडिट (Admin Vault)</div>
-              <div className="text-[10px] text-emerald-400 font-mono">
-                ओनर: श्री राम नाग (Shri Ram Nag) • AES-256 Gated
-              </div>
+              <h2 className="text-base font-bold text-white">सुरक्षित एडमिन वॉल्ट (Admin Vault)</h2>
+              <p className="text-xs text-slate-400">SHA-256 एन्क्रिप्टेड पासकोड सुरक्षा</p>
             </div>
           </div>
           <button
-            onClick={onClose}
             type="button"
-            className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 transition"
+            onClick={onClose}
+            aria-label="Close Admin Vault"
+            className="w-12 h-12 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto p-4">
-          {!isUnlocked ? (
-            <div className="flex flex-col items-center justify-center py-8 space-y-4">
-              <div className="w-14 h-14 rounded-3xl bg-slate-950 border border-emerald-500/40 flex items-center justify-center">
-                <Lock className="w-7 h-7 text-emerald-400" />
+        <div className="p-5 overflow-y-auto space-y-5">
+          {!hasExistingPasscode ? (
+            <form onSubmit={handleSetupPasscode} className="space-y-4">
+              <div className="p-3.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-xs text-cyan-200">
+                पहली बार उपयोग: कृपया अपने वॉल्ट के लिए एक नया पासकोड बनाएँ। यह पासकोड केवल आपके डिवाइस पर SHA-256 हैश के रूप में सहेजा जाएगा।
               </div>
-              <div className="text-center">
-                <div className="text-sm font-bold text-white">सुरक्षा पासकोड दर्ज करें</div>
-                <div className="text-[11px] text-slate-400 mt-0.5">
-                  (ओनर पिन: 1977 या 'shriramnag')
-                </div>
-              </div>
-              <div className="w-full max-w-[260px] space-y-2">
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                  नया पासकोड बनाएँ (कम से कम 4 अक्षर)
+                </label>
                 <input
                   type="password"
-                  value={passcode}
-                  onChange={(e) => {
-                    setPasscode(e.target.value);
-                    setErrorMsg("");
-                  }}
-                  placeholder="Master Passcode..."
-                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-white/15 rounded-xl text-center text-sm text-white tracking-widest focus:outline-none focus:border-emerald-400 font-mono"
-                  onKeyDown={(e) => e.key === "Enter" && handleUnlock()}
+                  value={passcodeInput}
+                  onChange={(e) => setPasscodeInput(e.target.value)}
+                  placeholder="नया पासकोड लिखें"
+                  className="w-full h-12 px-4 rounded-xl bg-slate-900 border border-white/15 text-sm text-white focus:outline-none focus:border-cyan-400"
                 />
-                {errorMsg && (
-                  <div className="text-[10px] text-rose-400 text-center font-medium">
-                    {errorMsg}
-                  </div>
-                )}
-                <button
-                  onClick={handleUnlock}
-                  type="button"
-                  className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition"
-                >
-                  <Key className="w-3.5 h-3.5" />
-                  <span>वॉल्ट अनलॉक करें</span>
-                </button>
               </div>
-            </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                  पासकोड की पुष्टि करें
+                </label>
+                <input
+                  type="password"
+                  value={confirmPasscodeInput}
+                  onChange={(e) => setConfirmPasscodeInput(e.target.value)}
+                  placeholder="दोबारा पासकोड लिखें"
+                  className="w-full h-12 px-4 rounded-xl bg-slate-900 border border-white/15 text-sm text-white focus:outline-none focus:border-cyan-400"
+                />
+              </div>
+              {authError && (
+                <p className="text-xs text-red-400 flex items-center gap-1.5">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <span>{authError}</span>
+                </p>
+              )}
+              <button
+                type="submit"
+                className="w-full h-12 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold text-sm transition"
+              >
+                पासकोड सहेजें और वॉल्ट खोलें
+              </button>
+            </form>
+          ) : !isUnlocked ? (
+            <form onSubmit={handleUnlock} className="space-y-4">
+              <div className="flex items-center gap-3 p-3.5 rounded-xl bg-slate-900 border border-white/10">
+                <Lock className="w-5 h-5 text-amber-400 shrink-0" />
+                <p className="text-xs text-slate-300">
+                  वॉल्ट लॉक है। खोलने के लिए अपना पासकोड दर्ज करें।
+                </p>
+              </div>
+              <input
+                type="password"
+                value={passcodeInput}
+                onChange={(e) => setPasscodeInput(e.target.value)}
+                placeholder="अपना पासकोड लिखें"
+                className="w-full h-12 px-4 rounded-xl bg-slate-900 border border-white/15 text-sm text-white focus:outline-none focus:border-cyan-400"
+              />
+              {authError && (
+                <p className="text-xs text-red-400 flex items-center gap-1.5">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <span>{authError}</span>
+                </p>
+              )}
+              <button
+                type="submit"
+                className="w-full h-12 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold text-sm transition"
+              >
+                वॉल्ट अनलॉक करें
+              </button>
+            </form>
           ) : (
-            <div className="space-y-4">
-              {/* Gemini API Key Configuration */}
-              <div className="p-3.5 rounded-2xl bg-slate-950/90 border border-sky-500/30 space-y-2">
-                <div className="flex items-center gap-2">
-                  <KeyRound className="w-4 h-4 text-sky-400" />
-                  <span className="text-xs font-bold text-white">Google AI Studio (Gemini Audio) Key:</span>
+            <div className="space-y-6">
+              <div className="p-4 rounded-xl bg-slate-900/90 border border-white/10 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-white flex items-center gap-2">
+                    <KeyRound className="w-4 h-4 text-cyan-400" />
+                    Gemini API Key
+                  </span>
                 </div>
-                <div className="flex gap-2">
-                  <input
-                    type="password"
-                    value={apiKeyInput}
-                    onChange={(e) => setApiKeyInput(e.target.value)}
-                    placeholder="AIzaSy... (Gemini API Key)"
-                    className="flex-1 px-3 py-1.5 bg-slate-900 border border-white/10 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-400 font-mono"
-                  />
-                  <button
-                    onClick={handleSaveApiKey}
-                    type="button"
-                    className="px-3 py-1.5 bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-bold rounded-xl transition"
-                  >
-                    Save
-                  </button>
-                </div>
-                {savedKeyMsg && (
-                  <div className="text-[10px] text-emerald-400 font-medium">{savedKeyMsg}</div>
+                <input
+                  type="password"
+                  value={geminiKeyInput}
+                  onChange={(e) => setGeminiKeyInput(e.target.value)}
+                  placeholder="AIzaSy... (अपनी Gemini API Key यहाँ डालें)"
+                  className="w-full h-12 px-3.5 rounded-xl bg-slate-950 border border-white/15 text-sm text-white focus:outline-none focus:border-cyan-400"
+                />
+                <button
+                  type="button"
+                  onClick={handleSaveGeminiKey}
+                  disabled={isTestingKey}
+                  className="w-full h-12 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 text-slate-950 font-semibold text-xs sm:text-sm transition"
+                >
+                  {isTestingKey ? "जाँचा जा रहा है..." : "Key सहेजें और जाँचें"}
+                </button>
+                {keyStatus && (
+                  <p className="text-xs text-cyan-300 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    <span>{keyStatus}</span>
+                  </p>
                 )}
-                <div className="text-[9px] text-slate-400">
-                  Used by direct endpoint `gemini-2.5-flash:generateContent` for realistic human-like voice synthesis.
-                </div>
               </div>
 
-              {/* Status Banner */}
-              <div className="p-3 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-bold text-emerald-300">
-                    Payment & OTP Shield Active
-                  </div>
-                  <div className="text-[10px] text-slate-400">
-                    GPay, PhonePe, Paytm, SMS OTPs: 100% Shielded
-                  </div>
-                </div>
-                <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                  HARDENED
-                </span>
-              </div>
-
-              {/* Audit Logs */}
-              <div className="space-y-2">
-                <div className="text-xs font-bold text-slate-300">
-                  सुरक्षा ऑडिट लॉग्स ({logs.length})
-                </div>
-                <div className="space-y-1.5 max-h-[220px] overflow-y-auto">
-                  {logs.map((log) => (
-                    <div
-                      key={log.id}
-                      className="p-2.5 rounded-xl bg-slate-950 border border-white/5 space-y-1 text-[10px]"
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-white">निजी नोट्स / क्रेडेंशियल</h3>
+                <form onSubmit={handleAddSecret} className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    value={newLabel}
+                    onChange={(e) => setNewLabel(e.target.value)}
+                    placeholder="नाम (जैसे: YouTube Channel ID)"
+                    className="h-12 px-3.5 rounded-xl bg-slate-900 border border-white/15 text-xs text-white"
+                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="password"
+                      value={newValue}
+                      onChange={(e) => setNewValue(e.target.value)}
+                      placeholder="गुप्त मान"
+                      className="flex-1 h-12 px-3.5 rounded-xl bg-slate-900 border border-white/15 text-xs text-white"
+                    />
+                    <button
+                      type="submit"
+                      className="px-4 h-12 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-white"
                     >
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-white">
-                          [{log.severity}] {log.action}
-                        </span>
-                        <span className="font-mono text-slate-500 text-[9px]">{log.timestamp}</span>
+                      जोड़ें
+                    </button>
+                  </div>
+                </form>
+
+                {secrets.length === 0 ? (
+                  <p className="text-xs text-slate-400 py-2">कोई निजी नोट सहेजा नहीं गया है।</p>
+                ) : (
+                  <div className="space-y-2">
+                    {secrets.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between p-3 rounded-xl bg-slate-900/70 border border-white/10"
+                      >
+                        <div>
+                          <p className="text-xs font-semibold text-white">{item.label}</p>
+                          <p className="text-xs text-slate-400">••••••••••••</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteSecret(item.id)}
+                          aria-label={`Delete ${item.label}`}
+                          className="w-12 h-12 rounded-xl flex items-center justify-center text-red-400 hover:bg-red-500/10"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
-                      <div className="text-slate-400 text-[9px] font-mono">
-                        {log.source} • {log.status}
-                      </div>
-                      <div className="text-slate-300 text-[10px]">{log.details}</div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}

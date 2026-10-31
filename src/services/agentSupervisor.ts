@@ -3,16 +3,15 @@ import { CharacterRole, TaskRecord, TaskState } from "../types";
 export const SPECIALIST_AGENTS = [
   { id: "MainOrchestratorAgent", label: "Main Orchestrator", avatar: "MYRAA" as CharacterRole },
   { id: "PlanningAgent", label: "Planning Agent", avatar: "SAGE" as CharacterRole },
-  { id: "AndroidDevAgent", label: "Android Automation & Dev Agent", avatar: "MYRAA" as CharacterRole },
+  { id: "AndroidDevAgent", label: "Android Automation Agent", avatar: "MYRAA" as CharacterRole },
   { id: "SoftwareEngAgent", label: "Software Engineering Agent", avatar: "CODEX" as CharacterRole },
   { id: "DebuggingAgent", label: "Debugging Agent", avatar: "CODEX" as CharacterRole },
-  { id: "TestingAgent", label: "Testing & Verification Agent", avatar: "CODEX" as CharacterRole },
-  { id: "CybersecurityAgent", label: "Cybersecurity Monitor Agent", avatar: "SENTINEL" as CharacterRole },
-  { id: "ResearchAgent", label: "Research & Web Agent", avatar: "SAGE" as CharacterRole },
-  { id: "DocumentationAgent", label: "Documentation Agent", avatar: "SAGE" as CharacterRole },
-  { id: "GitHubDevOpsAgent", label: "GitHub & DevOps Agent", avatar: "CODEX" as CharacterRole },
-  { id: "MemoryContextAgent", label: "Memory & Context Agent", avatar: "MYRAA" as CharacterRole },
-  { id: "UserInterfaceAgent", label: "3D Avatar & UI Agent", avatar: "PIXEL" as CharacterRole },
+  { id: "TestingAgent", label: "Verification Agent", avatar: "CODEX" as CharacterRole },
+  { id: "CybersecurityAgent", label: "Security & Privacy Agent", avatar: "SENTINEL" as CharacterRole },
+  { id: "ResearchAgent", label: "Deep Research Agent", avatar: "SAGE" as CharacterRole },
+  { id: "DocumentationAgent", label: "Writing & Rewrite Agent", avatar: "AURA" as CharacterRole },
+  { id: "MemoryContextAgent", label: "Brain Memory Agent", avatar: "MYRAA" as CharacterRole },
+  { id: "UserInterfaceAgent", label: "Media & UI Agent", avatar: "PIXEL" as CharacterRole },
 ];
 
 class AgentSupervisorService {
@@ -20,22 +19,6 @@ class AgentSupervisorService {
   private listeners: Set<(tasks: TaskRecord[]) => void> = new Set();
   private emergencyStopEngaged: boolean = false;
   private activeAvatarRole: CharacterRole = "MYRAA";
-
-  constructor() {
-    this.createInitialWelcomeTask();
-  }
-
-  private createInitialWelcomeTask() {
-    const task = this.createTask({
-      title: "System Initialization & Gemini Audio Engine",
-      actionName: "SYSTEM_BOOT",
-      avatarRole: "MYRAA",
-      model: "Google Gemini 2.5 Flash Audio",
-    });
-    this.transitionState(task.taskId, "EXECUTING", "Activating 3D avatar & Gemini Audio Engine (Kore/Aoede/Despina/Puck/Fenrir/Charon)...");
-    this.transitionState(task.taskId, "VERIFYING", "Verifying on-device brain DB & Android bridge...");
-    this.verifyAndCompleteTask(task.taskId, { ok: true, message: "MYRAA v3.0 / SHIV AI is online with Gemini realistic voices." });
-  }
 
   public subscribe(fn: (tasks: TaskRecord[]) => void) {
     this.listeners.add(fn);
@@ -62,20 +45,20 @@ class AgentSupervisorService {
 
   public routeIntentToSpecialist(actionOrToolName: string): (typeof SPECIALIST_AGENTS)[0] {
     const name = actionOrToolName.toLowerCase();
-    if (name.includes("memory") || name.includes("brain") || name.includes("fact") || name.includes("याद")) {
+    if (name.includes("memory") || name.includes("brain") || name.includes("याद")) {
       return SPECIALIST_AGENTS.find((a) => a.id === "MemoryContextAgent")!;
     }
-    if (name.includes("research") || name.includes("search") || name.includes("browse") || name.includes("रिसर्च")) {
+    if (name.includes("research") || name.includes("search") || name.includes("रिसर्च")) {
       return SPECIALIST_AGENTS.find((a) => a.id === "ResearchAgent")!;
     }
-    if (name.includes("security") || name.includes("scan") || name.includes("shield") || name.includes("सुरक्षा")) {
+    if (name.includes("rewrite") || name.includes("writing") || name.includes("slop")) {
+      return SPECIALIST_AGENTS.find((a) => a.id === "DocumentationAgent")!;
+    }
+    if (name.includes("security") || name.includes("shield") || name.includes("vault")) {
       return SPECIALIST_AGENTS.find((a) => a.id === "CybersecurityAgent")!;
     }
-    if (name.includes("code") || name.includes("bug") || name.includes("git") || name.includes("कोडिंग")) {
+    if (name.includes("code") || name.includes("bug")) {
       return SPECIALIST_AGENTS.find((a) => a.id === "SoftwareEngAgent")!;
-    }
-    if (name.includes("ui") || name.includes("camera") || name.includes("avatar") || name.includes("वीडियो")) {
-      return SPECIALIST_AGENTS.find((a) => a.id === "UserInterfaceAgent")!;
     }
     return SPECIALIST_AGENTS.find((a) => a.id === "AndroidDevAgent")!;
   }
@@ -84,7 +67,7 @@ class AgentSupervisorService {
     title,
     actionName,
     avatarRole,
-    model = "Google Gemini 2.5 Flash Audio",
+    model = "gemini-3.8-live",
   }: {
     title: string;
     actionName: string;
@@ -107,10 +90,10 @@ class AgentSupervisorService {
       state: "CREATED",
       currentStep: "Task created",
       completedSteps: [],
-      remainingSteps: ["Security Policy Check", "Execute Tool/Action", "Verify Outcome"],
+      remainingSteps: ["Policy Check", "Execute Tool", "Verify Outcome"],
       errors: [],
       recoveryAttempts: 0,
-      maxRetries: 2,
+      maxRetries: 1,
       approvalRequests: [],
       verificationStatus: "PENDING",
       verified: false,
@@ -142,21 +125,29 @@ class AgentSupervisorService {
     this.notify();
   }
 
-  public verifyAndCompleteTask(taskId: string, result: { ok: boolean; message?: string; error?: string }) {
+  public verifyAndCompleteTask(
+    taskId: string,
+    result: { ok?: boolean; success?: boolean; message?: string; error?: string }
+  ) {
     const task = this.tasks.get(taskId);
     if (!task) return;
+    const isSuccess = Boolean(result.success ?? result.ok);
     this.transitionState(taskId, "VERIFYING", "Verifying execution outcome...");
-    if (!result.ok) {
+
+    if (!isSuccess) {
+      const reason = result.error || result.message || "Execution failed";
       task.verificationStatus = "FAILED";
-      task.errors.push(result.error || "Verification failed");
-      this.transitionState(taskId, "FAILED", result.error || "Execution failed");
+      task.verified = false;
+      task.errors.push(reason);
+      this.transitionState(taskId, "FAILED", reason);
       return;
     }
+
     task.verified = true;
     task.verificationStatus = "VERIFIED";
     task.completedSteps.push("Verify Outcome");
     if (task.remainingSteps.length > 0) task.remainingSteps.shift();
-    this.transitionState(taskId, "COMPLETED", result.message || "Task completed and verified.");
+    this.transitionState(taskId, "COMPLETED", result.message || "Task verified and completed.");
   }
 
   public emergencyStop() {

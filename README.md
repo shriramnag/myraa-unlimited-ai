@@ -1,71 +1,37 @@
-# 👑 SHIV AI — MYRAA (निर्माण कर्ता एवं मालिक: श्री राम नाग | Creator & Supreme Owner: Shri Ram Nag)
+# 👑 SHIV AI — MYRAA (निर्माण कर्ता एवं मालिक: श्री राम नाग | Creator & Owner: Shri Ram Nag)
 
-**निर्माण कर्ता एवं सुप्रीम मालिक (Creator & Supreme Owner):** **Shri Ram Nag (श्री राम नाग)**  
-**आर्किटेक्चर (Architecture):** 100% Native Android (Kotlin + Jetpack Compose + Material Design 3)  
+**निर्माण कर्ता एवं मालिक (Creator & Owner):** **Shri Ram Nag (श्री राम नाग)**  
+**आर्किटेक्चर (Architecture):** React 18 + TypeScript + Vite + Tailwind + `@google/genai` (Gemini Live & TTS)  
 **वर्ज़न (Version):** `v7.0.65` (Code: 7065)  
 
 ---
 
 ## 🌟 Overview & Key Features
 
-MYRAA is a futuristic 3D Holographic AI Companion, Autonomous Android Automation Engine, and Long-Term Memory Hub engineered for **Shri Ram Nag**:
+MYRAA is a Voice-First AI Companion, Real-Time Gemini Live Audio Assistant, and On-Device Memory Hub engineered for **Shri Ram Nag**:
 
-1. **3D Holographic Avatar Stage**:
-   - 6 Specialist Characters:
-     - 🌸 **MYRAA**: Voice Companion & Android Orchestration (Celestial Blue `#0A84FF`)
-     - 💻 **CODEX**: SWE-Agent Software Engineering & Bug Fixing (Emerald Green `#00E676`)
-     - ✨ **AURA**: Classic Blonde Companion & Creative Synthesis (Gold `#F59E0B`)
-     - 🛡️ **SENTINEL**: Cybersecurity Monitor & SkillSpector Shield (Crimson Red `#FF6B6B`)
-     - 🔬 **SAGE**: gpt-researcher Deep Research & Planning (Violet `#6C63FF`)
-     - 🎬 **PIXEL**: Media, Presentation & Video Specialist (Gold `#F59E0B`)
-   - Close-up & Full view modes with speaking pulse animation.
+1. **Voice-First Holographic Avatar Stage**:
+   - 6 Specialist Characters with Gemini Voices:
+     - 🌸 **MYRAA**: Voice Companion & Android Orchestration (`Kore`)
+     - ✨ **AURA**: Creative Synthesis & Design (`Aoede`)
+     - 🎬 **PIXEL**: Media, Scripts & Creator Specialist (`Despina`)
+     - 💻 **CODEX**: Software Engineering & Debugging (`Puck`)
+     - 🛡️ **SENTINEL**: Security & Privacy Guardian (`Fenrir`)
+     - 🔬 **SAGE**: Deep Research & Strategic Analysis (`Charon`)
+   - Closeup & Full view modes with real-time mic-level ring and output `AnalyserNode` waveform bars.
 
-2. **10-State Agent Supervisor Engine**:
-   - Full lifecycle management: `CREATED`, `PLANNING`, `AWAITING_APPROVAL`, `EXECUTING`, `VERIFYING`, `RECOVERING`, `COMPLETED`, `FAILED`, `CANCELLED`, `BLOCKED_BY_POLICY`.
-   - Invariant enforcement: Tasks cannot be marked `COMPLETED` without prior supervisor verification.
-   - Emergency Stop (HALT) and Resume controls.
+2. **Real-Time Gemini Live Audio (`src/voice/`)**:
+   - Continuous bidirectional audio via `@google/genai` (`gemini-3.8-live` with automatic model fallback).
+   - 16 kHz mono PCM16 microphone streaming via `AudioWorklet` (with `ScriptProcessor` fallback).
+   - Gapless 24 kHz PCM16 Web Audio playback through a single persistent `AudioContext` (`GainNode` → `AnalyserNode` → `destination`) with instant barge-in interruption.
+   - Read-aloud TTS via `gemini-3.8-flash-tts` (with fallback).
 
-3. **Shiv-AI-Core (11 Autonomous Tools)**:
-   - `claude-mem`: Long-term memory and context compression
-   - `gsd-core`: Git. Ship. Done engineering workflow
-   - `Agent-Reach`: Multi-platform web research
-   - `no-ai-slop`: Humanize writing
-   - `ppt-master`: PowerPoint generator
-   - `video-use`: Video editing & FFmpeg automation
-   - `SkillSpector`: NVIDIA AI prompt injection scanner
-   - `AI-penetration-testing`: Security audit & penetration testing toolkit
-   - `SWE-agent`: Princeton NLP autonomous coding agent
-   - `huggingface_hub`: Open-source AI models & datasets
-   - `gpt-researcher`: Deep multi-source research synthesis
+3. **Real Allowlisted Tools (`src/voice/ToolRegistry.ts` & `DeviceActions.ts`)**:
+   - `openApp`, `openWhatsApp`, `openUrl` (`https://` validated), `makeCall` (with on-screen confirmation), `callContact` (honest lookup), `toggleFlashlight`, `saveMemory`, `searchMemory`, `deepResearch` (Google Search grounding with sources), `rewriteText`, and `openPanel`.
 
-4. **Long-Term On-Device Brain Database**:
-   - 100% Private on-device memory store (IDENTITY, PREFERENCE, FACT, PROJECT, HABIT, RELATIONSHIP).
-   - Instant search, add, delete, and JSON backup export/import.
-   - Pre-seeded with Shri Ram Nag's ownership profile.
+4. **On-Device Brain Database**:
+   - Local private memory store (`IDENTITY`, `PREFERENCE`, `FACT`, `PROJECT`, `HABIT`, `RELATIONSHIP`) with instant search and JSON backup export/import.
 
-5. **43 Native Android System Actions & Hub**:
-   - Real hardware Torch/Flashlight toggle via `CameraManager`.
-   - Phone dialer & call launcher (`ACTION_DIAL`).
-   - SMS & WhatsApp message composer (`ACTION_SENDTO` / `ACTION_VIEW`).
-   - System settings (Wi-Fi, Bluetooth, Display, Battery, Storage, Accessibility).
-   - Maps & turn-by-turn navigation, YouTube, and Web search.
-
-6. **Admin Vault & Security Shield**:
-   - Master passcode protected (`1977` or `shriramnag`).
-   - Redacted audit log inspection with severity tags.
-   - Payment & OTP Shield (GPay, PhonePe, Paytm, Banking apps shielded).
-   - Voice Lock biometrics profile (~155Hz Shri Ram Nag).
-
-7. **Voice Engine & Audio Duet**:
-   - Android `TextToSpeech` with high-pitched anime companion pitch (+35%) and clear cadence.
-   - Speech-to-text recognition integration.
-
----
-
-## 🏗️ Build & Compilation
-
-The project is structured with standard Android Gradle (Kotlin DSL):
-- Root: `build.gradle.kts`, `settings.gradle.kts`
-- Module: `app/build.gradle.kts`
-- Target SDK: 36, Min SDK: 24
-- Compiler: Java 17 / Kotlin 2.2 with Jetpack Compose BOM
+5. **Admin Vault & Security Shield**:
+   - First-run user-defined passcode hashed with SHA-256 via Web Crypto (`crypto.subtle.digest`).
+   - Audit log inspection and Payment & OTP Shield (GPay, PhonePe, Paytm, Banking apps shielded).

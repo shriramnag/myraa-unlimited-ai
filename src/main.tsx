@@ -44,16 +44,16 @@ class RootErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundar
           <h1 className="text-base font-bold text-sky-400 mb-1">
             SHIV AI • MYRAA Recovery Shield
           </h1>
-          <p className="text-xs text-slate-400 text-center max-w-sm mb-4">
-            श्री राम नाग जी, सिस्टम ने एक असामान्य स्थिति को सुरक्षित रूप से रिकवर कर लिया है।
+          <p className="text-sm text-slate-300 text-center max-w-sm mb-4 leading-relaxed">
+            सिस्टम ने एक असामान्य स्थिति को सुरक्षित रूप से रिकवर कर लिया है।
           </p>
-          <div className="p-3 rounded-2xl bg-slate-900/80 border border-white/10 text-[10px] font-mono text-slate-400 max-w-sm overflow-x-auto mb-4">
+          <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-white/10 text-xs font-mono text-slate-300 max-w-sm overflow-x-auto mb-4">
             {this.state.error?.message || "Safe Fallback Activated"}
           </div>
           <button
             onClick={this.handleReset}
             type="button"
-            className="px-5 py-2.5 rounded-2xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs transition shadow-lg active:scale-95"
+            className="min-h-[48px] px-5 py-2.5 rounded-2xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-sm transition shadow-lg active:scale-95"
           >
             सिस्टम रीस्टार्ट करें (Restart Engine)
           </button>

@@ -1,286 +1,216 @@
-import React, { useRef, useEffect } from "react";
-import { CharacterRole, RoleTheme } from "../types";
-import { Camera, Volume2, Sparkles, UserCheck } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { PERSONA_THEMES } from "../config/personas";
+import { CharacterRole } from "../types";
+import { VoiceEngineState } from "../voice/voiceStore";
+import { liveSession } from "../voice/LiveSession";
 
-export const ROLE_THEMES: Record<CharacterRole, RoleTheme> = {
-  MYRAA: {
-    role: "MYRAA",
-    name: "शिव एआई • MYRAA",
-    hindiTitle: "3D होलोग्राफिक AI साथी",
-    specialty: "Voice Companion & Android Orchestration",
-    badge: "🌸 MYRAA",
-    color: "celestial",
-    hex: "#0A84FF",
-    thumb: "./avatars/myraa.png",
-    closeupVideo: "./avatars/videos/myraa_closeup.mp4",
-    fullVideo: "./avatars/videos/myraa_full.mp4",
-    systemPersona: "Sweet, gentle anime heroine companion for Shri Ram Nag",
-    voiceName: "Kore",
-    voiceGender: "Female",
-    voiceDescription: "Kore (warm, expressive, companion natural tone)",
-  },
-  CODEX: {
-    role: "CODEX",
-    name: "शिव एआई • CODEX",
-    hindiTitle: "SWE-Agent कोडिंग विशेषज्ञ",
-    specialty: "Software Engineering & Bug Fixing",
-    badge: "💻 CODEX",
-    color: "emerald",
-    hex: "#00E676",
-    thumb: "./avatars/codex.png",
-    closeupVideo: "./avatars/videos/codex_closeup.mp4",
-    fullVideo: "./avatars/videos/codex_full.mp4",
-    systemPersona: "Precise, intelligent autonomous software engineering specialist",
-    voiceName: "Puck",
-    voiceGender: "Male",
-    voiceDescription: "Puck (sharp, fast, modern developer tone)",
-  },
-  AURA: {
-    role: "AURA",
-    name: "शिव एआई • AURA",
-    hindiTitle: "क्लासिक ब्लोंड AI साथी",
-    specialty: "Creative Synthesis & Design",
-    badge: "✨ AURA",
-    color: "gold",
-    hex: "#F59E0B",
-    thumb: "./avatars/aura.png",
-    closeupVideo: "./avatars/videos/aura_closeup.mp4",
-    fullVideo: "./avatars/videos/aura_full.mp4",
-    systemPersona: "Bright, creative and stylish anime companion",
-    voiceName: "Aoede",
-    voiceGender: "Female",
-    voiceDescription: "Aoede (melodious, gentle, calm tone)",
-  },
-  SENTINEL: {
-    role: "SENTINEL",
-    name: "शिव एआई • SENTINEL",
-    hindiTitle: "साइबर सुरक्षा मॉनिटर",
-    specialty: "SkillSpector & App Integrity Shield",
-    badge: "🛡️ SENTINEL",
-    color: "crimson",
-    hex: "#FF6B6B",
-    thumb: "./avatars/sentinel.png",
-    closeupVideo: "./avatars/videos/sentinel_closeup.mp4",
-    fullVideo: "./avatars/videos/sentinel_full.mp4",
-    systemPersona: "Vigilant cybersecurity and prompt injection guardian",
-    voiceName: "Fenrir",
-    voiceGender: "Male",
-    voiceDescription: "Fenrir (deep, commanding, authoritative tone)",
-  },
-  SAGE: {
-    role: "SAGE",
-    name: "शिव एआई • SAGE",
-    hindiTitle: "डीप रिसर्च विशेषज्ञ",
-    specialty: "gpt-researcher & Strategic Planning",
-    badge: "🔬 SAGE",
-    color: "violet",
-    hex: "#6C63FF",
-    thumb: "./avatars/sage.png",
-    closeupVideo: "./avatars/videos/sage_closeup.mp4",
-    fullVideo: "./avatars/videos/sage_full.mp4",
-    systemPersona: "Scholarly, analytical deep research and intelligence specialist",
-    voiceName: "Charon",
-    voiceGender: "Male",
-    voiceDescription: "Charon (calm, intellectual, wise mentor tone)",
-  },
-  PIXEL: {
-    role: "PIXEL",
-    name: "शिव एआई • PIXEL / VORTEX",
-    hindiTitle: "मीडिया व PPT विशेषज्ञ",
-    specialty: "Video-Use & Interactive UI",
-    badge: "🎬 PIXEL",
-    color: "gold",
-    hex: "#F59E0B",
-    thumb: "./avatars/pixel.png",
-    closeupVideo: "./avatars/videos/vortex_closeup.mp4",
-    fullVideo: "./avatars/videos/vortex_full.mp4",
-    systemPersona: "Dynamic media, slide deck, and UI graphics engineer",
-    voiceName: "Despina",
-    voiceGender: "Female",
-    voiceDescription: "Despina (energetic, dynamic, friendly tone)",
-  },
-};
-
-interface Props {
+interface HolographicAvatarStageProps {
   activeRole: CharacterRole;
-  onSelectRole: (role: CharacterRole) => void;
-  isSpeaking: boolean;
-  cameraMode: "CLOSEUP" | "FULL";
-  onToggleCameraMode: () => void;
+  voiceState: VoiceEngineState;
+  voiceName: string;
+  micLevel: number;
+  outputWaveform: number[];
+  cameraMode?: "CLOSEUP" | "FULL";
+  onToggleCameraMode?: () => void;
 }
 
-export const HolographicAvatarStage: React.FC<Props> = ({
+export const HolographicAvatarStage: React.FC<HolographicAvatarStageProps> = ({
   activeRole,
-  onSelectRole,
-  isSpeaking,
-  cameraMode,
-  onToggleCameraMode,
+  voiceState,
+  voiceName,
+  micLevel,
+  outputWaveform,
 }) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [videoFailed, setVideoFailed] = React.useState(false);
-  const [imgFailed, setImgFailed] = React.useState(false);
-  const theme = ROLE_THEMES[activeRole] || ROLE_THEMES.MYRAA;
-  const currentVideoSrc = cameraMode === "FULL" ? theme.fullVideo : theme.closeupVideo;
+  const theme = PERSONA_THEMES[activeRole] || PERSONA_THEMES.MYRAA;
+  const [blink, setBlink] = useState(false);
 
   useEffect(() => {
-    setVideoFailed(false);
-    setImgFailed(false);
-  }, [activeRole, cameraMode]);
+    const interval = setInterval(() => {
+      setBlink(true);
+      setTimeout(() => setBlink(false), 140);
+    }, 3500);
+    return () => clearInterval(interval);
+  }, []);
 
-  // Handle Video Lip-Sync playback with safe WebView guards
-  useEffect(() => {
-    const vid = videoRef.current;
-    if (!vid || videoFailed) return;
-    try {
-      if (isSpeaking) {
-        vid.playbackRate = 1.15;
-        const playPromise = vid.play();
-        if (playPromise && typeof playPromise.catch === "function") {
-          playPromise.catch(() => {});
-        }
-      } else {
-        vid.pause();
-        if (vid.readyState >= 1) {
-          vid.currentTime = 0.2;
-        }
-      }
-    } catch {
-      // Safe fallback for WebViews before metadata is ready
+  const avgOutEnergy =
+    outputWaveform && outputWaveform.length > 0
+      ? outputWaveform.reduce((a, b) => a + b, 0) / outputWaveform.length
+      : 0.15;
+
+  const activeEnergy =
+    voiceState === "SPEAKING"
+      ? avgOutEnergy
+      : voiceState === "LISTENING"
+      ? Math.max(0.15, micLevel)
+      : 0.1;
+
+  const mouthOpenPx =
+    voiceState === "SPEAKING"
+      ? Math.max(4, Math.min(24, Math.round(avgOutEnergy * 34)))
+      : voiceState === "LISTENING"
+      ? 4
+      : 2;
+
+  const orbScale = 1 + Math.min(0.2, activeEnergy * 0.28);
+
+  const statusText = (() => {
+    switch (voiceState) {
+      case "CONNECTING":
+        return "कनेक्ट हो रहा है...";
+      case "LISTENING":
+        return "सुन रही हूँ... बोलिए";
+      case "THINKING":
+        return "सोच रही हूँ...";
+      case "SPEAKING":
+        return `${theme.name} बोल रही है... (रोकने के लिए बोलें या टैप करें)`;
+      case "ERROR":
+        return "कनेक्शन में समस्या — दोबारा कोशिश करें";
+      default:
+        return "बात करने के लिए माइक दबाएँ";
     }
-  }, [isSpeaking, currentVideoSrc, videoFailed]);
+  })();
 
   return (
-    <div className="relative flex flex-col items-center justify-center w-full px-2 pt-2 select-none">
-      {/* 3D Viewport Box */}
+    <div className="relative w-full h-full flex flex-col items-center justify-center select-none overflow-hidden px-4">
+      {/* Ambient radial glow */}
       <div
-        className="relative w-full max-w-[390px] h-[260px] sm:h-[300px] rounded-3xl overflow-hidden border transition-all duration-500 shadow-2xl backdrop-blur-md flex items-center justify-center bg-slate-950/80"
-        style={{ borderColor: theme.hex }}
+        className="pointer-events-none absolute w-64 h-64 rounded-full blur-3xl transition-all duration-500 opacity-30"
+        style={{
+          background: `radial-gradient(circle, ${theme.hex} 0%, transparent 75%)`,
+          transform: `scale(${orbScale * 1.15})`,
+        }}
+      />
+
+      {/* Interactive Center Stage Orb */}
+      <button
+        type="button"
+        onClick={() => liveSession.toggleVoiceSession()}
+        aria-label={`${theme.name} voice orb`}
+        className="relative flex items-center justify-center w-48 h-48 sm:w-56 sm:h-56 rounded-full focus:outline-none transition-transform duration-200 active:scale-95"
       >
-        {/* Glow ambient background */}
+        {/* Outer reactive ring */}
         <div
-          className="absolute inset-0 opacity-25 filter blur-2xl transition-all duration-700 pointer-events-none"
-          style={{ background: `radial-gradient(circle at 50% 50%, ${theme.hex}, transparent 75%)` }}
+          className="absolute inset-0 rounded-full transition-transform duration-100"
+          style={{
+            border: `2px solid ${theme.hex}`,
+            transform: `scale(${orbScale})`,
+            boxShadow: `0 0 36px ${theme.hex}33`,
+          }}
         />
 
-        {/* Video / Avatar Surface with Graceful Fallback */}
-        <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
-          {!videoFailed ? (
-            <video
-              ref={videoRef}
-              src={currentVideoSrc}
-              poster={theme.thumb}
-              playsInline
-              muted
-              loop
-              preload="metadata"
-              onError={() => setVideoFailed(true)}
-              className={`w-full h-full object-cover transition-transform duration-300 ${
-                isSpeaking ? "scale-105" : "scale-100"
-              }`}
-            />
-          ) : !imgFailed ? (
-            <img
-              src={theme.thumb}
-              alt={theme.name}
-              onError={() => setImgFailed(true)}
-              className={`w-full h-full object-cover transition-transform duration-300 ${
-                isSpeaking ? "scale-105" : "scale-100"
-              }`}
-            />
-          ) : (
-            <div className="flex flex-col items-center justify-center p-6 text-center">
-              <div
-                className="w-20 h-20 rounded-full flex items-center justify-center border-2 mb-2 shadow-lg"
-                style={{ borderColor: theme.hex, backgroundColor: "rgba(15, 23, 42, 0.9)" }}
-              >
-                <Sparkles className="w-8 h-8" style={{ color: theme.hex }} />
-              </div>
-              <span className="text-sm font-bold text-white">{theme.badge}</span>
-              <span className="text-[10px] text-slate-400">{theme.hindiTitle}</span>
-            </div>
-          )}
-        </div>
+        {/* Rotating ring */}
+        <div
+          className={`absolute inset-3 rounded-full border border-dashed ${
+            voiceState === "CONNECTING" || voiceState === "THINKING" ? "animate-spin" : ""
+          }`}
+          style={{
+            borderColor: `${theme.hex}66`,
+            animationDuration: "8s",
+          }}
+        />
 
-        {/* Top-Right: Camera Mode Toggle */}
-        <button
-          onClick={onToggleCameraMode}
-          type="button"
-          className="absolute top-2.5 right-2.5 z-20 p-2 rounded-full bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-white/10 transition shadow-lg flex items-center gap-1 text-[10px]"
-          title="Toggle Closeup / Full Viewport"
+        {/* Glass sphere */}
+        <div
+          className="relative w-40 h-40 sm:w-48 sm:h-48 rounded-full bg-slate-950/90 backdrop-blur-xl border border-white/15 flex flex-col items-center justify-center overflow-hidden shadow-2xl"
+          style={{
+            boxShadow: `inset 0 0 32px ${theme.hex}29`,
+          }}
         >
-          <Camera className="w-3.5 h-3.5" />
-          <span className="font-mono">{cameraMode}</span>
-        </button>
-
-        {/* Top-Left: Status & Gemini Voice Chip */}
-        <div className="absolute top-2.5 left-2.5 z-20 flex flex-col gap-1">
-          <div
-            className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold backdrop-blur-md border shadow-lg"
-            style={{
-              backgroundColor: "rgba(10, 15, 30, 0.8)",
-              borderColor: theme.hex,
-              color: theme.hex,
-            }}
-          >
-            <Sparkles className="w-3 h-3 animate-spin" style={{ animationDuration: "4s" }} />
-            <span>{isSpeaking ? "LIP-SYNC ACTIVE" : "HOLOGRAPHIC IDLE"}</span>
-          </div>
-
-          <div className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-mono bg-slate-900/80 text-emerald-400 border border-emerald-500/30">
-            <Volume2 className="w-2.5 h-2.5" />
-            <span>Gemini: {theme.voiceName} ({theme.voiceGender})</span>
-          </div>
-        </div>
-
-        {/* Bottom Banner */}
-        <div className="absolute bottom-0 left-0 right-0 z-20 p-2.5 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent flex items-center justify-between">
-          <div>
-            <div className="text-xs font-bold text-white flex items-center gap-1.5">
-              <span>{theme.name}</span>
-            </div>
-            <div className="text-[10px] text-slate-400">
-              {theme.hindiTitle} • {theme.voiceDescription}
-            </div>
-          </div>
-          <div className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-white/10 text-slate-200 border border-white/10">
-            {theme.badge}
-          </div>
-        </div>
-      </div>
-
-      {/* Role Switcher Carousel */}
-      <div className="flex items-center justify-start sm:justify-center w-full max-w-[420px] gap-2 overflow-x-auto py-2.5 px-1 scrollbar-none">
-        {(Object.keys(ROLE_THEMES) as CharacterRole[]).map((role) => {
-          const item = ROLE_THEMES[role];
-          const isSelected = activeRole === role;
-          return (
-            <button
-              key={role}
-              onClick={() => onSelectRole(role)}
-              type="button"
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-[11px] font-bold transition-all shrink-0 border ${
-                isSelected
-                  ? "bg-slate-900 text-white shadow-lg scale-105"
-                  : "bg-slate-950/80 text-slate-400 hover:text-white border-white/5"
-              }`}
-              style={{
-                borderColor: isSelected ? item.hex : "rgba(255,255,255,0.08)",
-                boxShadow: isSelected ? `0 0 15px ${item.hex}40` : "none",
-              }}
-            >
-              <img
-                src={item.thumb}
-                alt={item.name}
-                className="w-4 h-4 rounded-full object-cover border border-white/20"
-                onError={(e) => {
-                  (e.target as HTMLElement).style.display = "none";
-                }}
+          {/* SVG Expressive Face */}
+          <svg viewBox="0 0 160 160" className="w-32 h-32 sm:w-36 sm:h-36">
+            <path
+              d="M42,58 C42,30 118,30 118,58 C118,98 104,126 80,134 C56,126 42,98 42,58 Z"
+              fill="rgba(15, 23, 42, 0.9)"
+              stroke={theme.hex}
+              strokeWidth="2.2"
+            />
+            <circle cx="80" cy="48" r="3.2" fill={theme.hex} />
+            <path
+              d={
+                voiceState === "THINKING"
+                  ? "M54,60 Q64,54 72,60 M88,58 Q96,52 106,58"
+                  : "M54,62 Q64,57 72,61 M88,61 Q96,57 106,62"
+              }
+              stroke={theme.hex}
+              strokeWidth="2.2"
+              fill="none"
+              strokeLinecap="round"
+            />
+            {blink ? (
+              <>
+                <line x1="56" y1="72" x2="70" y2="72" stroke={theme.hex} strokeWidth="2.5" strokeLinecap="round" />
+                <line x1="90" y1="72" x2="104" y2="72" stroke={theme.hex} strokeWidth="2.5" strokeLinecap="round" />
+              </>
+            ) : (
+              <>
+                <ellipse cx="63" cy="72" rx="6.5" ry="5" fill="#0f172a" stroke={theme.hex} strokeWidth="2" />
+                <circle cx="63" cy="72" r="2.5" fill={theme.hex} />
+                <ellipse cx="97" cy="72" rx="6.5" ry="5" fill="#0f172a" stroke={theme.hex} strokeWidth="2" />
+                <circle cx="97" cy="72" r="2.5" fill={theme.hex} />
+              </>
+            )}
+            <path
+              d="M80,76 L78,90 L83,91"
+              stroke="rgba(255,255,255,0.45)"
+              strokeWidth="1.6"
+              fill="none"
+              strokeLinecap="round"
+            />
+            {voiceState === "SPEAKING" ? (
+              <rect
+                x={80 - 13}
+                y={106 - mouthOpenPx / 2}
+                width={26}
+                height={mouthOpenPx}
+                rx={mouthOpenPx / 2}
+                fill={theme.hex}
+                fillOpacity="0.35"
+                stroke={theme.hex}
+                strokeWidth="2.2"
               />
-              <span>{item.badge}</span>
-              <span className="text-[9px] opacity-75 font-mono">({item.voiceName})</span>
-            </button>
-          );
-        })}
+            ) : (
+              <path
+                d="M67,105 Q80,113 93,105"
+                stroke={theme.hex}
+                strokeWidth="2.5"
+                fill="none"
+                strokeLinecap="round"
+              />
+            )}
+          </svg>
+
+          {/* 12-bar live audio waveform */}
+          <div className="flex items-end justify-center gap-1 h-5 px-4">
+            {(outputWaveform && outputWaveform.length === 12
+              ? outputWaveform
+              : Array.from({ length: 12 }, () => activeEnergy)
+            ).map((val, idx) => {
+              const barValue = voiceState === "LISTENING" ? Math.max(0.15, micLevel) : val;
+              const heightPx = Math.max(4, Math.min(20, Math.round(barValue * 20)));
+              return (
+                <span
+                  key={idx}
+                  className="w-1 rounded-full transition-all duration-75"
+                  style={{
+                    height: `${heightPx}px`,
+                    backgroundColor: theme.hex,
+                    opacity: voiceState === "IDLE" ? 0.35 : 0.9,
+                  }}
+                />
+              );
+            })}
+          </div>
+        </div>
+      </button>
+
+      {/* Character Identity & Status */}
+      <div className="mt-2.5 text-center max-w-md">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10">
+          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: theme.hex }} />
+          <span className="text-xs font-bold text-white">{theme.name}</span>
+          <span className="text-xs text-slate-300">• Voice: {voiceName}</span>
+        </div>
+        <p className="mt-1 text-xs text-slate-300 font-medium">{statusText}</p>
       </div>
     </div>
   );

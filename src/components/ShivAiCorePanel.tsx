@@ -1,249 +1,307 @@
 import React, { useState } from "react";
-import { SHIV_AI_11_TOOLS, executeShivAiTool } from "../services/shivAiCore";
-import { YOUTUBE_11_SKILLS, executeYouTubeSkill, YouTubeSkill } from "../services/youtubeSkillEngine";
-import { ShivAiTool } from "../types";
-import { Sparkles, Terminal, Play, CheckCircle2, Search, ExternalLink, X, Video, Cpu, Copy, Check } from "lucide-react";
+import { X, Sparkles, Youtube, Play, Loader2, CheckCircle2, AlertTriangle } from "lucide-react";
+import { shivAiCore, ShivSkillModule } from "../services/shivAiCore";
+import { youtubeSkillEngine, YouTubeGenerationResult } from "../services/youtubeSkillEngine";
 
-interface Props {
+interface ShivAiCorePanelProps {
   isOpen: boolean;
   onClose: () => void;
-  onRunToolResult: (toolName: string, prompt: string, output: string) => void;
+  onRunToolResult?: (toolName: string, prompt: string, output: string) => void;
 }
 
-export const ShivAiCorePanel: React.FC<Props> = ({ isOpen, onClose, onRunToolResult }) => {
-  const [activeTab, setActiveTab] = useState<"CORE" | "YOUTUBE">("CORE");
-  // Core Tool state
-  const [selectedTool, setSelectedTool] = useState<ShivAiTool>(SHIV_AI_11_TOOLS[10]); // Default gpt-researcher
-  // YouTube Skill state
-  const [selectedYtSkill, setSelectedYtSkill] = useState<YouTubeSkill>(YOUTUBE_11_SKILLS[0]); // Default YT Script Writer
-  const [promptText, setPromptText] = useState("");
-  const [isRunning, setIsRunning] = useState(false);
-  const [lastOutput, setLastOutput] = useState<{ title: string; output: string } | null>(null);
-  const [copied, setCopied] = useState(false);
+export const ShivAiCorePanel: React.FC<ShivAiCorePanelProps> = ({
+  isOpen,
+  onClose,
+  onRunToolResult,
+}) => {
+  const [tab, setTab] = useState<"TOOLS" | "YOUTUBE">("TOOLS");
+  const [modules] = useState<ShivSkillModule[]>(() => shivAiCore.getModules());
+  const [selectedModuleId, setSelectedModuleId] = useState<ShivSkillModule["id"]>("gpt-researcher");
+  const [toolInput, setToolInput] = useState("");
+  const [toolOutput, setToolOutput] = useState("");
+  const [isRunningTool, setIsRunningTool] = useState(false);
+  const [toolError, setToolError] = useState("");
+
+  const [ytTopic, setYtTopic] = useState("");
+  const [selectedYtSkill, setSelectedYtSkill] = useState("yt-viral-hook");
+  const [ytResult, setYtResult] = useState<YouTubeGenerationResult | null>(null);
+  const [isRunningYt, setIsRunningYt] = useState(false);
+  const [ytError, setYtError] = useState("");
 
   if (!isOpen) return null;
 
-  const handleExecute = async () => {
-    setIsRunning(true);
-    setCopied(false);
+  const activeModule = modules.find((m) => m.id === selectedModuleId) || modules[0];
+  const ytSkills = youtubeSkillEngine.getSkills();
+
+  const handleRunTool = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setToolError("");
+    setToolOutput("");
+    setIsRunningTool(true);
     try {
-      if (activeTab === "CORE") {
-        const query = promptText || `${selectedTool.name} से विश्लेषण व रिपोर्ट तैयार करें`;
-        const res = await executeShivAiTool(selectedTool.id, query);
-        setLastOutput({ title: res.tool.name, output: res.output });
-        onRunToolResult(res.tool.name, query, res.output);
-      } else {
-        const query = promptText || `${selectedYtSkill.name}: ${selectedYtSkill.hindiTitle}`;
-        const res = await executeYouTubeSkill(selectedYtSkill.id, query);
-        setLastOutput({ title: res.skill.name, output: res.output });
-        onRunToolResult(res.skill.name, query, res.output);
-      }
-    } catch (e: any) {
-      setLastOutput({ title: "Error", output: `Error: ${e.message || "Failed to execute"}` });
+      const res = await shivAiCore.executeSkillModule(activeModule.id, toolInput);
+      setToolOutput(res);
+      onRunToolResult?.(activeModule.name, toolInput, res);
+    } catch (err: any) {
+      setToolError(err?.message || String(err));
     } finally {
-      setIsRunning(false);
+      setIsRunningTool(false);
     }
   };
 
-  const handleCopyOutput = () => {
-    if (!lastOutput) return;
-    navigator.clipboard?.writeText(lastOutput.output);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleRunYoutube = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setYtError("");
+    setYtResult(null);
+    setIsRunningYt(true);
+    try {
+      const res = await youtubeSkillEngine.generateCreatorPackage(ytTopic, selectedYtSkill);
+      setYtResult(res);
+      onRunToolResult?.("YouTube Creator Studio", ytTopic, res.hookScript);
+    } catch (err: any) {
+      setYtError(err?.message || String(err));
+    } finally {
+      setIsRunningYt(false);
+    }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/80 backdrop-blur-xl animate-in fade-in duration-150">
-      <div className="w-full max-w-[530px] max-h-[88vh] flex flex-col bg-slate-900 border border-sky-500/40 rounded-3xl shadow-2xl overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-slate-950/70">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">{activeTab === "CORE" ? "🔱" : "🎬"}</span>
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+      <div className="w-full max-w-2xl bg-slate-950 border border-white/15 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90dvh]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-slate-900/60">
+          <div className="flex items-center gap-2.5">
+            <Sparkles className="w-5 h-5 text-cyan-400" />
             <div>
-              <div className="text-sm font-bold text-slate-100">
-                {activeTab === "CORE" ? "शिव एआई कोर (Shiv-AI-Core)" : "YouTube Creator Skill Engine"}
-              </div>
-              <div className="text-[10px] text-[#00E676] font-mono">
-                ओनर: श्री राम नाग (Shri Ram Nag) • 11 Autonomous Skills
-              </div>
+              <h2 className="text-base font-bold text-white">रिसर्च, राइटिंग और YouTube स्टूडियो</h2>
+              <p className="text-xs text-slate-400">100% असली Gemini AI और लोकल मेमोरी टूल्स</p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            type="button"
-            className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 transition"
+            aria-label="Close Studio Panel"
+            className="w-12 h-12 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Tab Selector */}
-        <div className="flex border-b border-white/10 bg-slate-950/50">
+        <div className="flex border-b border-white/10 px-5 pt-2 gap-2 bg-slate-900/30">
           <button
-            onClick={() => {
-              setActiveTab("CORE");
-              setLastOutput(null);
-            }}
             type="button"
-            className={`flex-1 py-2.5 px-3 text-xs font-bold flex items-center justify-center gap-1.5 transition border-b-2 ${
-              activeTab === "CORE"
-                ? "border-sky-400 text-sky-400 bg-sky-500/10"
+            onClick={() => setTab("TOOLS")}
+            className={`h-12 px-4 text-xs sm:text-sm font-semibold border-b-2 transition flex items-center gap-2 ${
+              tab === "TOOLS"
+                ? "border-cyan-400 text-cyan-300"
                 : "border-transparent text-slate-400 hover:text-white"
             }`}
           >
-            <Cpu className="w-3.5 h-3.5" />
-            <span>Shiv-AI-Core (11 Tools)</span>
+            <Sparkles className="w-4 h-4" />
+            <span>4 AI टूल्स (Research & Memory)</span>
           </button>
           <button
-            onClick={() => {
-              setActiveTab("YOUTUBE");
-              setLastOutput(null);
-            }}
             type="button"
-            className={`flex-1 py-2.5 px-3 text-xs font-bold flex items-center justify-center gap-1.5 transition border-b-2 ${
-              activeTab === "YOUTUBE"
-                ? "border-red-500 text-red-400 bg-red-500/10"
+            onClick={() => setTab("YOUTUBE")}
+            className={`h-12 px-4 text-xs sm:text-sm font-semibold border-b-2 transition flex items-center gap-2 ${
+              tab === "YOUTUBE"
+                ? "border-red-400 text-red-300"
                 : "border-transparent text-slate-400 hover:text-white"
             }`}
           >
-            <Video className="w-3.5 h-3.5" />
-            <span>YouTube Engine (11 Skills)</span>
+            <Youtube className="w-4 h-4" />
+            <span>YouTube क्रिएटर स्टूडियो</span>
           </button>
         </div>
 
-        {/* Content Body */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {activeTab === "CORE" ? (
-            /* Shiv-AI-Core 11 Tools Grid */
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {SHIV_AI_11_TOOLS.map((t) => {
-                const isSelected = selectedTool.id === t.id;
-                return (
+        <div className="p-5 overflow-y-auto space-y-5">
+          {tab === "TOOLS" ? (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {modules.map((mod) => (
                   <button
-                    key={t.id}
-                    onClick={() => {
-                      setSelectedTool(t);
-                      setLastOutput(null);
-                    }}
+                    key={mod.id}
                     type="button"
-                    className={`p-2.5 rounded-2xl text-left border transition-all ${
-                      isSelected
-                        ? "bg-sky-500/20 border-sky-400 shadow-md shadow-sky-500/20"
-                        : "bg-slate-950/60 border-white/5 hover:border-white/20"
+                    onClick={() => {
+                      setSelectedModuleId(mod.id);
+                      setToolOutput("");
+                      setToolError("");
+                    }}
+                    className={`p-3.5 rounded-xl border text-left transition ${
+                      selectedModuleId === mod.id
+                        ? "bg-cyan-500/15 border-cyan-400 text-white"
+                        : "bg-slate-900/70 border-white/10 text-slate-300 hover:border-white/25"
                     }`}
                   >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-base">{t.icon}</span>
-                      <span className="text-[9px] font-mono font-bold text-slate-400">
-                        #{t.index}
-                      </span>
-                    </div>
-                    <div className="text-xs font-bold text-white truncate">{t.name}</div>
-                    <div className="text-[9px] text-slate-400 truncate">{t.hindiDesc}</div>
+                    <p className="text-sm font-bold">{mod.name}</p>
+                    <p className="text-xs text-slate-400 mt-1">{mod.hindiSummary}</p>
                   </button>
-                );
-              })}
-            </div>
-          ) : (
-            /* YouTube 11 Skills Grid */
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {YOUTUBE_11_SKILLS.map((s) => {
-                const isSelected = selectedYtSkill.id === s.id;
-                return (
-                  <button
-                    key={s.id}
-                    onClick={() => {
-                      setSelectedYtSkill(s);
-                      setLastOutput(null);
-                    }}
-                    type="button"
-                    className={`p-2.5 rounded-2xl text-left border transition-all ${
-                      isSelected
-                        ? "bg-red-500/20 border-red-500 shadow-md shadow-red-500/20"
-                        : "bg-slate-950/60 border-white/5 hover:border-white/20"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-base">{s.icon}</span>
-                      <span className="text-[9px] font-mono font-bold text-slate-400">
-                        #{s.index}
-                      </span>
-                    </div>
-                    <div className="text-xs font-bold text-white truncate">{s.name}</div>
-                    <div className="text-[9px] text-slate-400 truncate">{s.hindiTitle}</div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Prompt & Run Input */}
-          <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-white/10 space-y-3">
-            <div className="flex items-center justify-between text-xs">
-              <span className={`font-bold ${activeTab === "CORE" ? "text-sky-400" : "text-red-400"}`}>
-                {activeTab === "CORE" ? selectedTool.name : selectedYtSkill.name}
-              </span>
-              <span className="text-[10px] text-slate-400 font-mono truncate max-w-[200px]">
-                {activeTab === "CORE" ? selectedTool.hindiDesc : selectedYtSkill.hindiTitle}
-              </span>
-            </div>
-
-            <input
-              type="text"
-              value={promptText}
-              onChange={(e) => setPromptText(e.target.value)}
-              placeholder={
-                activeTab === "CORE"
-                  ? `निर्देश दें (उदा: '${selectedTool.name} से विश्लेषण व रिपोर्ट तैयार करें')...`
-                  : selectedYtSkill.promptPlaceholder
-              }
-              className="w-full px-3 py-2 bg-slate-900 border border-white/15 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
-              onKeyDown={(e) => e.key === "Enter" && handleExecute()}
-            />
-
-            <button
-              onClick={handleExecute}
-              disabled={isRunning}
-              type="button"
-              className={`w-full py-2.5 rounded-xl text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition disabled:opacity-50 ${
-                activeTab === "CORE"
-                  ? "bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500"
-                  : "bg-gradient-to-r from-red-500 to-amber-500 hover:from-red-400 hover:to-amber-400 text-white"
-              }`}
-            >
-              <Play className="w-3.5 h-3.5 fill-current" />
-              <span>
-                {isRunning
-                  ? "निष्पादित हो रहा है..."
-                  : activeTab === "CORE"
-                  ? "टूल निष्पादित करें (Execute Tool)"
-                  : "यूट्यूब स्किल चलाएं (Execute YT Skill)"}
-              </span>
-            </button>
-          </div>
-
-          {/* Last Output Viewer */}
-          {lastOutput && (
-            <div className="p-3.5 rounded-2xl bg-slate-950 border border-emerald-500/40 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>आउटपुट रिपोर्ट: {lastOutput.title}</span>
-                </span>
-                <button
-                  onClick={handleCopyOutput}
-                  type="button"
-                  className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/10 hover:bg-white/20 text-slate-300 text-[10px] transition"
-                  title="Copy Output"
-                >
-                  {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                  <span>{copied ? "Copied" : "Copy"}</span>
-                </button>
+                ))}
               </div>
-              <pre className="text-[11px] text-slate-200 font-mono whitespace-pre-wrap leading-relaxed max-h-[160px] overflow-y-auto">
-                {lastOutput.output}
-              </pre>
-            </div>
+
+              <form
+                onSubmit={handleRunTool}
+                className="space-y-3 p-4 rounded-xl bg-slate-900 border border-white/10"
+              >
+                <label className="block text-xs font-semibold text-cyan-300">
+                  {activeModule.name} — इनपुट लिखें:
+                </label>
+                <textarea
+                  rows={3}
+                  value={toolInput}
+                  onChange={(e) => setToolInput(e.target.value)}
+                  placeholder={activeModule.inputPlaceholder}
+                  className="w-full p-3.5 rounded-xl bg-slate-950 border border-white/15 text-sm text-white focus:outline-none focus:border-cyan-400"
+                />
+                <button
+                  type="submit"
+                  disabled={isRunningTool}
+                  className="w-full h-12 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 text-slate-950 font-semibold text-sm flex items-center justify-center gap-2"
+                >
+                  {isRunningTool ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>प्रोसेस हो रहा है...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-4 h-4" />
+                      <span>टूल चलाएँ</span>
+                    </>
+                  )}
+                </button>
+              </form>
+
+              {toolError && (
+                <div className="p-3.5 rounded-xl bg-red-500/15 border border-red-500/30 text-xs text-red-300 flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <span>{toolError}</span>
+                </div>
+              )}
+
+              {toolOutput && (
+                <div className="p-4 rounded-xl bg-slate-900/90 border border-cyan-500/30 space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-cyan-300">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>परिणाम:</span>
+                  </div>
+                  <pre className="text-xs sm:text-sm text-slate-100 whitespace-pre-wrap font-sans leading-relaxed">
+                    {toolOutput}
+                  </pre>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <form
+                onSubmit={handleRunYoutube}
+                className="space-y-3 p-4 rounded-xl bg-slate-900 border border-white/10"
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                      YouTube टूल चुनें
+                    </label>
+                    <select
+                      value={selectedYtSkill}
+                      onChange={(e) => setSelectedYtSkill(e.target.value)}
+                      className="w-full h-12 px-3 rounded-xl bg-slate-950 border border-white/15 text-xs text-white"
+                    >
+                      {ytSkills.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name} — {s.hindiTitle}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 mb-1">
+                      वीडियो का विषय (Topic)
+                    </label>
+                    <input
+                      type="text"
+                      value={ytTopic}
+                      onChange={(e) => setYtTopic(e.target.value)}
+                      placeholder="जैसे: 2026 में YouTube चैनल कैसे ग्रो करें"
+                      className="w-full h-12 px-3.5 rounded-xl bg-slate-950 border border-white/15 text-sm text-white"
+                    />
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  disabled={isRunningYt}
+                  className="w-full h-12 rounded-xl bg-red-500 hover:bg-red-400 disabled:opacity-50 text-white font-semibold text-sm flex items-center justify-center gap-2"
+                >
+                  {isRunningYt ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Gemini से तैयार किया जा रहा है...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Youtube className="w-4 h-4" />
+                      <span>पूरा YouTube पैकेज बनाएँ</span>
+                    </>
+                  )}
+                </button>
+              </form>
+
+              {ytError && (
+                <div className="p-3.5 rounded-xl bg-red-500/15 border border-red-500/30 text-xs text-red-300 flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <span>{ytError}</span>
+                </div>
+              )}
+
+              {ytResult && (
+                <div className="space-y-3 p-4 rounded-xl bg-slate-900 border border-white/10">
+                  <div>
+                    <h4 className="text-xs font-semibold text-red-300 uppercase">
+                      सुझाए गए टाइटल (High CTR Titles)
+                    </h4>
+                    <ul className="mt-1.5 space-y-1 text-sm text-white list-disc list-inside">
+                      {ytResult.titleOptions.map((t, i) => (
+                        <li key={i}>{t}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-semibold text-cyan-300 uppercase">
+                      शुरुआती 15-सेकंड हुक स्क्रिप्ट
+                    </h4>
+                    <p className="mt-1 text-sm text-slate-100 whitespace-pre-wrap">
+                      {ytResult.hookScript}
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-semibold text-amber-300 uppercase">थंबनेल आइडिया</h4>
+                    <p className="mt-1 text-xs sm:text-sm text-slate-200">
+                      {ytResult.thumbnailPrompt}
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-semibold text-emerald-300 uppercase">
+                      रिटेंशन रणनीति
+                    </h4>
+                    <p className="mt-1 text-xs sm:text-sm text-slate-200">
+                      {ytResult.retentionStrategy}
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-semibold text-purple-300 uppercase">SEO टैग्स</h4>
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      {ytResult.seoTags.map((tag, i) => (
+                        <span
+                          key={i}
+                          className="text-xs px-2.5 py-1 rounded-full bg-white/10 text-slate-200"
+                        >
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

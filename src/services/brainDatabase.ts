@@ -6,39 +6,32 @@ const INITIAL_MEMORIES: BrainMemory[] = [
   {
     id: "mem-creator-01",
     category: "IDENTITY",
-    key: "Nirman Karta & Owner",
-    content: "Shri Ram Nag (श्री राम नाग) is the supreme creator, owner, and architect of MYRAA & SHIV AI.",
+    key: "Creator & Owner",
+    content: "Shri Ram Nag (श्री राम नाग) is the creator and owner of MYRAA (SHIV AI).",
     timestamp: new Date().toLocaleDateString(),
     tags: ["Owner", "Creator", "Shri Ram Nag"],
   },
   {
     id: "mem-persona-02",
     category: "PREFERENCE",
-    key: "Persona & Gemini Realistic Voice Mapping",
-    content: "Natural Google AI Studio voice engine: MYRAA (Kore), AURA (Aoede), PIXEL (Despina), CODEX (Puck), SENTINEL (Fenrir), SAGE (Charon).",
+    key: "Character Voices",
+    content: "Gemini Live & TTS voices: MYRAA (Kore), AURA (Aoede), PIXEL (Despina), CODEX (Puck), SENTINEL (Fenrir), SAGE (Charon).",
     timestamp: new Date().toLocaleDateString(),
-    tags: ["Voice", "Persona", "Gemini Audio", "Kore", "Aoede", "Puck"],
+    tags: ["Voice", "Persona", "Gemini Live"],
   },
   {
     id: "mem-privacy-03",
     category: "FACT",
-    key: "Privacy & Storage Security",
-    content: "100% on-device private storage with IndexedDB + LocalStorage. Never leaks personal credentials, OTPs, or passwords to third-party telemetries.",
+    key: "On-Device Privacy",
+    content: "Memories are stored locally on-device in localStorage and can be exported or imported as JSON backups.",
     timestamp: new Date().toLocaleDateString(),
-    tags: ["Privacy", "Security", "Local"],
-  },
-  {
-    id: "mem-tools-04",
-    category: "PROJECT",
-    key: "Shiv-AI-Core Tool Integration",
-    content: "Includes all 11 autonomous tools (claude-mem, gsd-core, Agent-Reach, no-ai-slop, ppt-master, video-use, SkillSpector, AI-penetration-testing, SWE-agent, huggingface_hub, gpt-researcher).",
-    timestamp: new Date().toLocaleDateString(),
-    tags: ["Tools", "Shiv-AI-Core", "Autonomous"],
+    tags: ["Privacy", "Local"],
   },
 ];
 
 class BrainDatabaseService {
   private memories: BrainMemory[] = [];
+  private listeners: Set<(memories: BrainMemory[]) => void> = new Set();
 
   constructor() {
     this.loadFromStorage();
@@ -48,11 +41,14 @@ class BrainDatabaseService {
     try {
       const saved = localStorage.getItem(BRAIN_STORAGE_KEY);
       if (saved) {
-        this.memories = JSON.parse(saved);
-      } else {
-        this.memories = [...INITIAL_MEMORIES];
-        this.saveToStorage();
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          this.memories = parsed;
+          return;
+        }
       }
+      this.memories = [...INITIAL_MEMORIES];
+      this.saveToStorage();
     } catch {
       this.memories = [...INITIAL_MEMORIES];
     }
@@ -62,18 +58,54 @@ class BrainDatabaseService {
     try {
       localStorage.setItem(BRAIN_STORAGE_KEY, JSON.stringify(this.memories));
     } catch {}
+    this.notify();
+  }
+
+  private notify() {
+    const copy = this.getAll();
+    this.listeners.forEach((fn) => fn(copy));
+  }
+
+  public subscribe(fn: (memories: BrainMemory[]) => void): () => void {
+    this.listeners.add(fn);
+    fn(this.getAll());
+    return () => this.listeners.delete(fn);
   }
 
   public getAll(): BrainMemory[] {
     return [...this.memories];
   }
 
-  public addMemory(category: BrainMemory["category"], key: string, content: string, tags: string[] = []): BrainMemory {
+  public search(query: string): BrainMemory[] {
+    const q = query.trim().toLowerCase();
+    if (!q) return this.getAll().slice(0, 10);
+    return this.memories.filter(
+      (m) =>
+        m.key.toLowerCase().includes(q) ||
+        m.content.toLowerCase().includes(q) ||
+        m.category.toLowerCase().includes(q) ||
+        m.tags.some((t) => t.toLowerCase().includes(q))
+    );
+  }
+
+  public getCompactSummaryForPrompt(limit: number = 8): string {
+    return this.memories
+      .slice(0, limit)
+      .map((m) => `- [${m.category}] ${m.key}: ${m.content}`)
+      .join("\n");
+  }
+
+  public addMemory(
+    category: BrainMemory["category"],
+    key: string,
+    content: string,
+    tags: string[] = []
+  ): BrainMemory {
     const mem: BrainMemory = {
       id: "mem-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 5),
       category,
-      key,
-      content,
+      key: key.trim() || "Note",
+      content: content.trim(),
       timestamp: new Date().toLocaleDateString(),
       tags,
     };
@@ -90,7 +122,7 @@ class BrainDatabaseService {
 
   public exportBackupJson(): string {
     const backup = {
-      appName: "MYRAA v3.0 / SHIV AI",
+      appName: "MYRAA v7.0.65 / SHIV AI",
       databaseName: "MyraaBrainDatabase_ShriRamNag",
       owner: "Shri Ram Nag (श्री राम नाग)",
       exportedAt: new Date().toISOString(),

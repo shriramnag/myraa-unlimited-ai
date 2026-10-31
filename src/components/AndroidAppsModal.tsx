@@ -1,244 +1,235 @@
 import React, { useState } from "react";
-import { INSTALLED_ANDROID_APPS, nativeBridge } from "../services/nativeBridge";
+import { X, Smartphone, ExternalLink, Phone, Flashlight, CheckCircle2, Info } from "lucide-react";
 import {
-  Phone,
-  MessageSquare,
-  Camera,
-  PlaySquare,
-  Settings,
-  ShoppingBag,
-  MapPin,
-  Calendar,
-  Clock,
-  Globe,
-  Sparkles,
-  X,
-  PhoneCall,
-  Send,
-  Share2,
-  Check,
-  AlertCircle,
-  Accessibility,
-} from "lucide-react";
+  nativeBridge,
+  ALL_43_NATIVE_ACTIONS,
+  INSTALLED_ANDROID_APPS,
+} from "../services/nativeBridge";
+import { deviceActions } from "../voice/DeviceActions";
 
-interface Props {
+interface AndroidAppsModalProps {
   isOpen: boolean;
-  activeAppId: string | null;
+  activeAppId?: string | null;
   onClose: () => void;
-  onActionTriggered: (action: string, msg: string) => void;
+  onActionTriggered?: (action: string, msg: string) => void;
 }
 
-export const AndroidAppsModal: React.FC<Props> = ({
+export const AndroidAppsModal: React.FC<AndroidAppsModalProps> = ({
   isOpen,
-  activeAppId,
   onClose,
   onActionTriggered,
 }) => {
-  const [currentTab, setCurrentTab] = useState<string>(activeAppId || "DRAWER");
-  const [dialNumber, setDialNumber] = useState("");
-  const [smsTarget, setSmsTarget] = useState("");
-  const [smsContent, setSmsContent] = useState("");
+  const [statusMsg, setStatusMsg] = useState<string>("");
+  const [phoneInput, setPhoneInput] = useState("");
+  const [waText, setWaText] = useState("");
+  const [activeTab, setActiveTab] = useState<"QUICK" | "CATALOG">("QUICK");
 
   if (!isOpen) return null;
 
-  const handleDial = () => {
-    if (!dialNumber) return;
-    nativeBridge.recordAudit(
-      "MEDIUM",
-      "TELEPHONY",
-      "CALL_CONTACT",
-      "EXECUTED",
-      `Initiated call to ${dialNumber}`
-    );
-    onActionTriggered("Phone Call", `नंबर ${dialNumber} पर कॉल लगाई जा रही है...`);
-    onClose();
+  const isNative = nativeBridge.hasAndroidBridge();
+  const browserReadyCount = ALL_43_NATIVE_ACTIONS.filter(
+    (a) => isNative || a.worksInBrowser
+  ).length;
+
+  const handleOpenApp = async (appId: string) => {
+    const res = await deviceActions.openApp(appId);
+    setStatusMsg(res.message);
+    onActionTriggered?.(`Open ${appId}`, res.message);
   };
 
-  const handleSendSms = (isWhatsApp = false) => {
-    if (!smsTarget || !smsContent) return;
-    const action = isWhatsApp ? "SEND_WHATSAPP_MESSAGE" : "SEND_SMS";
-    nativeBridge.recordAudit(
-      "MEDIUM",
-      "MESSAGING",
-      action,
-      "EXECUTED",
-      `Sent ${isWhatsApp ? "WhatsApp" : "SMS"} to ${smsTarget}: ${smsContent}`
-    );
-    onActionTriggered(
-      isWhatsApp ? "WhatsApp Message" : "SMS Message",
-      `${isWhatsApp ? "WhatsApp" : "SMS"} संदेश ${smsTarget} को भेज दिया गया!`
-    );
-    onClose();
+  const handleToggleTorch = async () => {
+    const res = await deviceActions.toggleFlashlight();
+    setStatusMsg(res.message);
+    onActionTriggered?.("Toggle Flashlight", res.message);
+  };
+
+  const handleWhatsAppSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const res = await deviceActions.openWhatsApp(phoneInput, waText);
+    setStatusMsg(res.message);
+    onActionTriggered?.("Open WhatsApp", res.message);
+  };
+
+  const handleDial = async () => {
+    if (!phoneInput.trim()) {
+      setStatusMsg("कृपया पहले फ़ोन नंबर लिखें।");
+      return;
+    }
+    const res = await deviceActions.makeCall(phoneInput);
+    setStatusMsg(res.message);
+    onActionTriggered?.(`Call ${phoneInput}`, res.message);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/80 backdrop-blur-xl animate-in fade-in duration-150">
-      <div className="w-full max-w-[480px] max-h-[85vh] flex flex-col bg-slate-900 border border-emerald-500/40 rounded-3xl shadow-2xl overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 bg-slate-950 border-b border-white/10">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">📱</span>
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+      <div className="w-full max-w-2xl bg-slate-950 border border-white/15 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90dvh]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-slate-900/60">
+          <div className="flex items-center gap-2.5">
+            <Smartphone className="w-5 h-5 text-cyan-400" />
             <div>
-              <div className="text-sm font-bold text-white">Android System Hub & Native Apps</div>
-              <div className="text-[10px] text-emerald-400 font-mono">43 Native Actions Catalog</div>
+              <h2 className="text-base font-bold text-white">ऐप्स और डिवाइस कंट्रोल (Device Actions)</h2>
+              <p className="text-xs text-slate-400">
+                रनटाइम: {isNative ? "Android Native Bridge Active" : "Web Browser Mode (Deep Links & Web APIs)"}
+              </p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            type="button"
-            className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 transition"
+            aria-label="Close Apps Modal"
+            className="w-12 h-12 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Tab Switcher */}
-        <div className="flex border-b border-white/5 bg-slate-950/40">
+        <div className="flex border-b border-white/10 px-5 pt-2 gap-2 bg-slate-900/30">
           <button
-            onClick={() => setCurrentTab("DRAWER")}
             type="button"
-            className={`flex-1 py-2 text-xs font-bold transition border-b-2 ${
-              currentTab === "DRAWER"
-                ? "border-emerald-400 text-emerald-400 bg-emerald-500/10"
+            onClick={() => setActiveTab("QUICK")}
+            className={`h-12 px-4 text-xs sm:text-sm font-semibold border-b-2 transition ${
+              activeTab === "QUICK"
+                ? "border-cyan-400 text-cyan-300"
                 : "border-transparent text-slate-400 hover:text-white"
             }`}
           >
-            Apps Drawer
+            तुरंत ऐप और कॉल (Quick Actions)
           </button>
           <button
-            onClick={() => setCurrentTab("DIALER")}
             type="button"
-            className={`flex-1 py-2 text-xs font-bold transition border-b-2 ${
-              currentTab === "DIALER"
-                ? "border-emerald-400 text-emerald-400 bg-emerald-500/10"
+            onClick={() => setActiveTab("CATALOG")}
+            className={`h-12 px-4 text-xs sm:text-sm font-semibold border-b-2 transition ${
+              activeTab === "CATALOG"
+                ? "border-cyan-400 text-cyan-300"
                 : "border-transparent text-slate-400 hover:text-white"
             }`}
           >
-            Phone Dialer
-          </button>
-          <button
-            onClick={() => setCurrentTab("MESSAGES")}
-            type="button"
-            className={`flex-1 py-2 text-xs font-bold transition border-b-2 ${
-              currentTab === "MESSAGES"
-                ? "border-emerald-400 text-emerald-400 bg-emerald-500/10"
-                : "border-transparent text-slate-400 hover:text-white"
-            }`}
-          >
-            SMS / WhatsApp
+            Android क्षमताएँ ({browserReadyCount}/{ALL_43_NATIVE_ACTIONS.length} इस मोड में सक्रिय)
           </button>
         </div>
 
-        {/* Tab Body */}
-        <div className="flex-1 overflow-y-auto p-4">
-          {currentTab === "DRAWER" && (
-            <div className="grid grid-cols-3 gap-3">
-              {INSTALLED_ANDROID_APPS.map((app) => (
-                <button
-                  key={app.packageName}
-                  onClick={() => {
-                    onActionTriggered("Open App", `${app.appName} खोला जा रहा है...`);
-                    onClose();
-                  }}
-                  type="button"
-                  className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-950 border border-white/5 hover:border-emerald-500/50 hover:bg-slate-800 transition group"
-                >
-                  <div className="w-10 h-10 rounded-2xl bg-slate-900 border border-white/10 flex items-center justify-center mb-2 group-hover:scale-105 transition">
-                    <Sparkles className="w-5 h-5 text-emerald-400" />
-                  </div>
-                  <span className="text-xs font-bold text-white text-center truncate w-full">
-                    {app.appName}
-                  </span>
-                  <span className="text-[9px] text-slate-400">{app.category}</span>
-                </button>
-              ))}
+        <div className="p-5 overflow-y-auto space-y-5">
+          {statusMsg && (
+            <div className="p-3.5 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-xs text-cyan-200 flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0 text-cyan-400" />
+              <span>{statusMsg}</span>
             </div>
           )}
 
-          {currentTab === "DIALER" && (
-            <div className="space-y-4 max-w-[280px] mx-auto">
-              <div className="p-3 rounded-2xl bg-slate-950 border border-white/10 text-center font-mono text-xl font-bold text-white tracking-widest min-h-[52px] flex items-center justify-center">
-                {dialNumber || <span className="text-slate-600 text-sm">नंबर दर्ज करें...</span>}
-              </div>
-
-              <div className="grid grid-cols-3 gap-2">
-                {["1", "2", "3", "4", "5", "6", "7", "8", "9", "*", "0", "#"].map((digit) => (
-                  <button
-                    key={digit}
-                    onClick={() => setDialNumber((prev) => prev + digit)}
-                    type="button"
-                    className="h-12 rounded-2xl bg-slate-950 border border-white/5 hover:border-emerald-400/40 text-lg font-bold text-white transition hover:bg-slate-800"
-                  >
-                    {digit}
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex items-center gap-2 pt-2">
-                <button
-                  onClick={() => setDialNumber((prev) => prev.slice(0, -1))}
-                  type="button"
-                  className="flex-1 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 transition"
-                >
-                  Clear
-                </button>
-                <button
-                  onClick={handleDial}
-                  type="button"
-                  className="flex-1 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-xs font-bold text-slate-950 flex items-center justify-center gap-1.5 transition"
-                >
-                  <PhoneCall className="w-4 h-4 fill-current" />
-                  <span>Call</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {currentTab === "MESSAGES" && (
-            <div className="space-y-3">
+          {activeTab === "QUICK" ? (
+            <>
               <div>
-                <label className="text-[10px] text-slate-400 font-bold block mb-1">
-                  मोबाइल नंबर (Recipient):
-                </label>
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2.5">
+                  अनुमति प्राप्त ऐप्स (Allowlisted Apps)
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                  {INSTALLED_ANDROID_APPS.map((app) => (
+                    <button
+                      key={app.id}
+                      type="button"
+                      onClick={() => handleOpenApp(app.id)}
+                      className="p-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-white/15 text-left transition flex items-center justify-between text-white"
+                    >
+                      <div>
+                        <p className="text-sm font-bold">{app.appName}</p>
+                        <p className="text-xs text-slate-400">{app.category}</p>
+                      </div>
+                      <ExternalLink className="w-4 h-4 text-cyan-400 shrink-0" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-4 rounded-xl bg-slate-900 border border-white/10">
+                <div className="flex items-center gap-3">
+                  <Flashlight className="w-5 h-5 text-amber-400" />
+                  <div>
+                    <p className="text-sm font-semibold text-white">फ़्लैशलाइट / टॉर्च (Camera Torch)</p>
+                    <p className="text-xs text-slate-400">
+                      Android ऐप ब्रिज पर असली कैमरा टॉर्च चालू/बंद करता है
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleToggleTorch}
+                  className="h-12 px-4 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-xs font-semibold text-amber-300"
+                >
+                  टॉर्च टॉगल करें
+                </button>
+              </div>
+
+              <form
+                onSubmit={handleWhatsAppSend}
+                className="p-4 rounded-xl bg-slate-900 border border-white/10 space-y-3"
+              >
+                <h3 className="text-sm font-semibold text-white">सीधा कॉल या WhatsApp संदेश</h3>
+                <input
+                  type="tel"
+                  value={phoneInput}
+                  onChange={(e) => setPhoneInput(e.target.value)}
+                  placeholder="फ़ोन नंबर लिखें (जैसे: 9876543210)"
+                  className="w-full h-12 px-3.5 rounded-xl bg-slate-950 border border-white/15 text-sm text-white"
+                />
                 <input
                   type="text"
-                  value={smsTarget}
-                  onChange={(e) => setSmsTarget(e.target.value)}
-                  placeholder="+91 98765 43210..."
-                  className="w-full px-3 py-2 bg-slate-950 border border-white/10 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400"
+                  value={waText}
+                  onChange={(e) => setWaText(e.target.value)}
+                  placeholder="WhatsApp संदेश (वैकल्पिक)"
+                  className="w-full h-12 px-3.5 rounded-xl bg-slate-950 border border-white/15 text-sm text-white"
                 />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleDial}
+                    className="flex-1 h-12 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2"
+                  >
+                    <Phone className="w-4 h-4" />
+                    <span>कॉल करें (पुष्टि सहित)</span>
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 h-12 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    <span>WhatsApp खोलें</span>
+                  </button>
+                </div>
+              </form>
+            </>
+          ) : (
+            <div className="space-y-3">
+              <div className="p-3.5 rounded-xl bg-slate-900 border border-white/10 flex items-start gap-2.5 text-xs text-slate-300">
+                <Info className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                <span>
+                  नीचे Android ऐप के सिस्टम एक्शन दिए गए हैं। जो एक्शन वर्तमान मोड ({isNative ? "Android APK" : "Web Browser"}) में काम करते हैं उन पर हरा बैज है; बाकी केवल इंस्टॉल किए गए Android APK में काम करते हैं।
+                </span>
               </div>
 
-              <div>
-                <label className="text-[10px] text-slate-400 font-bold block mb-1">
-                  संदेश (Message Text):
-                </label>
-                <textarea
-                  value={smsContent}
-                  onChange={(e) => setSmsContent(e.target.value)}
-                  placeholder="संदेश टाइप करें..."
-                  rows={3}
-                  className="w-full px-3 py-2 bg-slate-950 border border-white/10 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 resize-none"
-                />
-              </div>
-
-              <div className="flex items-center gap-2 pt-2">
-                <button
-                  onClick={() => handleSendSms(false)}
-                  type="button"
-                  className="flex-1 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>SMS भेजें</span>
-                </button>
-                <button
-                  onClick={() => handleSendSms(true)}
-                  type="button"
-                  className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition"
-                >
-                  <Share2 className="w-3.5 h-3.5" />
-                  <span>WhatsApp</span>
-                </button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {ALL_43_NATIVE_ACTIONS.map((item) => {
+                  const worksNow = isNative || item.worksInBrowser;
+                  return (
+                    <div
+                      key={item.name}
+                      className="p-3 rounded-xl bg-slate-900/70 border border-white/10 flex items-center justify-between gap-2"
+                    >
+                      <div>
+                        <p className="text-xs font-semibold text-white">{item.name}</p>
+                        <p className="text-xs text-slate-400">{item.description}</p>
+                      </div>
+                      <span
+                        className={`text-xs px-2.5 py-1 rounded-full font-medium shrink-0 ${
+                          worksNow
+                            ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                            : "bg-slate-800 text-slate-400 border border-white/10"
+                        }`}
+                      >
+                        {worksNow ? "Active Now" : "Android App Only"}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
